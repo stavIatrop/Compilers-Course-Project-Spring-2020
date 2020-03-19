@@ -29,6 +29,11 @@ public class CalcEvaluator {
 
     private int Exp() throws ParseError, IOException {
 
+        if ((lookahead < '0' || lookahead > '9') && lookahead != '(')
+            throw new ParseError();
+        if (lookahead >= '0' && lookahead <= '9')       //lookahead is a digit
+
+            consume(lookahead);
         return 0;
     }
 
