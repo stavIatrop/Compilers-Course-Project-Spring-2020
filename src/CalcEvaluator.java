@@ -31,37 +31,48 @@ public class CalcEvaluator {
 
         if ((lookahead < '0' || lookahead > '9') && lookahead != '(')
             throw new ParseError();
-        if (lookahead >= '0' && lookahead <= '9')       //lookahead is a digit
+        //lookahead is a digit or '('
+        int termPart = Term(lookahead);
+        int restExpPart = RestExp(lookahead);
 
-            consume(lookahead);
+        return termPart + restExpPart;
+    }
+
+    private int Term(int arg) throws ParseError, IOException {
+
+        if ((lookahead < '0' || lookahead > '9') && lookahead != '(') {
+            throw  new ParseError();
+        }
+        //lookahead is a digit or '('
+        int parPart = Par(lookahead);
+        int restTermPart = restTerm(lookahead);
+
+        return 0;       //THIS RETURN SHOULD CHANGE
+    }
+
+    private int RestExp(int arg) throws ParseError, IOException {
+        
+
         return 0;
     }
 
-    private int RestExp() throws ParseError, IOException {
+    private int restTerm(int arg) throws ParseError, IOException {
 
         return 0;
     }
-    private int Term() throws ParseError, IOException {
+    private int Par(int arg) throws ParseError, IOException {
 
         return 0;
     }
-    private int restTerm() throws ParseError, IOException {
+    private int Num(int arg) throws ParseError, IOException {
 
         return 0;
     }
-    private int Par() throws ParseError, IOException {
+    private int RestNum(int arg) throws ParseError, IOException {
 
         return 0;
     }
-    private int Num() throws ParseError, IOException {
-
-        return 0;
-    }
-    private int RestNum() throws ParseError, IOException {
-
-        return 0;
-    }
-    private int Digit() throws ParseError, IOException {
+    private int Digit(int arg) throws ParseError, IOException {
 
         return 0;
     }
