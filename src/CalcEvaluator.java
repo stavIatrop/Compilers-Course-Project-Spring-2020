@@ -62,18 +62,68 @@ public class CalcEvaluator {
     }
     private int Par(int arg) throws ParseError, IOException {
 
-        return 0;
+        if ((lookahead < '0' || lookahead > '9') && lookahead != '(') {
+            throw new ParseError();
+        }
+        //lookahead is a digit or '('
+        if (lookahead >= '0' && lookahead <= '9') {   //lookahead is a digit
+
+            int numPart = Num(lookahead);
+            return numPart;
+        }
+        //lookahead is '('
+        consume('(');
+        int exp = Exp();
+        consume(')');
+        return exp;
     }
     private int Num(int arg) throws ParseError, IOException {
 
-        return 0;
+        if (lookahead < '0' || lookahead > '9') {       //lookahead not a digit
+            throw new ParseError();
+        }
+        //lookahead is a digit
+        int digitPart = Digit(lookahead);
+        int restNumPart = RestNum(lookahead);     //if restNum returns -1, it means that null production is chosen
+        String digitStr = Integer.toString(digitPart);
+        if (restNumPart >= 0) {
+
+            String restNumStr = Integer.toString(restNumPart);
+            digitStr = digitStr + restNumStr;
+        }
+        int finalNum = Integer.parseInt(digitStr);
+        return finalNum;
     }
     private int RestNum(int arg) throws ParseError, IOException {
 
-        return 0;
+        if(lookahead == ')' || lookahead == '+' || lookahead == '-' || lookahead == '*'
+                || lookahead == '/' || lookahead == -1 || lookahead == '\n') {  //null production
+            return -1;
+        }
+        if (lookahead < '0' || lookahead > '9') {        //lookahead not a digit
+            throw new ParseError();
+        }
+        //lookahead is a digit
+        int digitPart = Digit(lookahead);
+        int restNumPart = RestNum(lookahead);     //if restNum returns -1, it means that null production is chosen
+        String digitStr = Integer.toString(digitPart);
+        if (restNumPart >= 0) {
+
+            String restNumStr = Integer.toString(restNumPart);
+            digitStr = digitStr + restNumStr;
+        }
+        int finalNum = Integer.parseInt(digitStr);
+        return finalNum;
+
     }
     private int Digit(int arg) throws ParseError, IOException {
 
-        return 0;
+        if (lookahead < '0' || lookahead > '9') {       //lookahead not a digit
+            throw new ParseError();
+        }
+        //lookahead is a digit
+        int digit = evalDigit(lookahead);
+        consume(lookahead);
+        return digit;
     }
 }
