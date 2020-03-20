@@ -45,9 +45,11 @@ public class CalcEvaluator {
         }
         //lookahead is a digit or '('
         int parPart = Par(lookahead);
-        int restTermPart = restTerm(lookahead);
-
-        return 0;       //THIS RETURN SHOULD CHANGE
+        int restTermPart = restTerm(parPart);  //if restTermPart returns -1, null production is chosen
+        if (restTermPart == -1) {
+            return parPart;
+        }
+        return restTermPart;
     }
 
     private int RestExp(int arg) throws ParseError, IOException {
@@ -57,6 +59,32 @@ public class CalcEvaluator {
     }
 
     private int restTerm(int arg) throws ParseError, IOException {
+
+        if (lookahead == ')' || lookahead == '+' || lookahead == '-' || lookahead == -1 || lookahead == '\n' ) {
+            return -1;
+        }
+        if (lookahead == '*') {
+            consume('*');
+            int parPart = Par(lookahead);
+            int restTermPart = restTerm(parPart);
+
+            if (restTermPart == -1) {
+                return  arg * parPart;
+
+            }
+            return arg * restTermPart;
+        }
+        if (lookahead == '/') {
+            consume('/');
+            int parPart = Par(lookahead);
+            int restTermPart = restTerm(parPart);
+
+            if (restTermPart == -1) {
+                return  arg / parPart;
+
+            }
+            return arg / restTermPart;
+        }
 
         return 0;
     }
@@ -84,15 +112,19 @@ public class CalcEvaluator {
         }
         //lookahead is a digit
         int digitPart = Digit(lookahead);
-        int restNumPart = RestNum(lookahead);     //if restNum returns -1, it means that null production is chosen
-        String digitStr = Integer.toString(digitPart);
-        if (restNumPart >= 0) {
-
-            String restNumStr = Integer.toString(restNumPart);
-            digitStr = digitStr + restNumStr;
+        int restNumPart = RestNum(digitPart);     //if restNum returns -1, it means that null production is chosen
+        if (restNumPart == -1) {
+            return digitPart;
         }
-        int finalNum = Integer.parseInt(digitStr);
-        return finalNum;
+        return restNumPart;
+//        String digitStr = Integer.toString(digitPart);
+//        if (restNumPart >= 0) {
+//
+//            String restNumStr = Integer.toString(restNumPart);
+//            digitStr = digitStr + restNumStr;
+//        }
+//        int finalNum = Integer.parseInt(digitStr);
+//        return finalNum;
     }
     private int RestNum(int arg) throws ParseError, IOException {
 
@@ -105,17 +137,14 @@ public class CalcEvaluator {
         }
         //lookahead is a digit
         int digitPart = Digit(lookahead);
-        int restNumPart = RestNum(lookahead);     //if restNum returns -1, it means that null production is chosen
-        String digitStr = Integer.toString(digitPart);
-        if (restNumPart >= 0) {
-
-            String restNumStr = Integer.toString(restNumPart);
-            digitStr = digitStr + restNumStr;
+        int newArg = arg * 10 + digitPart;
+        int restNumPart = RestNum(newArg);     //if restNum returns -1, it means that null production is chosen
+        if (restNumPart == -1 ) {
+            return newArg;
         }
-        int finalNum = Integer.parseInt(digitStr);
-        return finalNum;
-
+        return restNumPart;
     }
+
     private int Digit(int arg) throws ParseError, IOException {
 
         if (lookahead < '0' || lookahead > '9') {       //lookahead not a digit
