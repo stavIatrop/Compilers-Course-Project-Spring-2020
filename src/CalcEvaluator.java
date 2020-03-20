@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -33,9 +34,8 @@ public class CalcEvaluator {
             throw new ParseError();
         //lookahead is a digit or '('
         int termPart = Term(lookahead);
-        int restExpPart = RestExp(lookahead);
-
-        return termPart + restExpPart;
+        int restExpPart = RestExp(termPart);
+        return restExpPart;
     }
 
     private int Term(int arg) throws ParseError, IOException {
@@ -45,48 +45,53 @@ public class CalcEvaluator {
         }
         //lookahead is a digit or '('
         int parPart = Par(lookahead);
-        int restTermPart = restTerm(parPart);  //if restTermPart returns -1, null production is chosen
-        if (restTermPart == -1) {
-            return parPart;
-        }
+        int restTermPart = RestTerm(parPart);  //if restTermPart returns -1, null production is chosen
         return restTermPart;
     }
 
     private int RestExp(int arg) throws ParseError, IOException {
-        
 
-        return 0;
+        if (lookahead == ')' || lookahead == -1 || lookahead == '\n') { //null production
+            return arg;
+        }
+        if (lookahead == '+') {
+            consume('+');
+            int termPart = Term(lookahead);
+            int restExpPart = RestExp(termPart);
+            return arg + restExpPart;
+        }
+        if (lookahead == '-') {
+            consume('-');
+            int termPart = Term(lookahead);
+            int restExpPart = RestExp(termPart);
+//            System.out.println(arg);
+//            System.out.println(termPart);
+//            System.out.println(restExpPart);
+            return arg - restExpPart;
+        }
+
+        throw new ParseError();
     }
 
-    private int restTerm(int arg) throws ParseError, IOException {
+    private int RestTerm(int arg) throws ParseError, IOException {
 
         if (lookahead == ')' || lookahead == '+' || lookahead == '-' || lookahead == -1 || lookahead == '\n' ) {
-            return -1;
+            return arg;
         }
         if (lookahead == '*') {
             consume('*');
             int parPart = Par(lookahead);
-            int restTermPart = restTerm(parPart);
-
-            if (restTermPart == -1) {
-                return  arg * parPart;
-
-            }
+            int restTermPart = RestTerm(parPart);
             return arg * restTermPart;
         }
         if (lookahead == '/') {
             consume('/');
             int parPart = Par(lookahead);
-            int restTermPart = restTerm(parPart);
-
-            if (restTermPart == -1) {
-                return  arg / parPart;
-
-            }
+            int restTermPart = RestTerm(parPart);
             return arg / restTermPart;
         }
 
-        return 0;
+        throw new ParseError();
     }
     private int Par(int arg) throws ParseError, IOException {
 
@@ -113,9 +118,6 @@ public class CalcEvaluator {
         //lookahead is a digit
         int digitPart = Digit(lookahead);
         int restNumPart = RestNum(digitPart);     //if restNum returns -1, it means that null production is chosen
-        if (restNumPart == -1) {
-            return digitPart;
-        }
         return restNumPart;
 //        String digitStr = Integer.toString(digitPart);
 //        if (restNumPart >= 0) {
@@ -130,7 +132,7 @@ public class CalcEvaluator {
 
         if(lookahead == ')' || lookahead == '+' || lookahead == '-' || lookahead == '*'
                 || lookahead == '/' || lookahead == -1 || lookahead == '\n') {  //null production
-            return -1;
+            return arg;
         }
         if (lookahead < '0' || lookahead > '9') {        //lookahead not a digit
             throw new ParseError();
@@ -139,9 +141,6 @@ public class CalcEvaluator {
         int digitPart = Digit(lookahead);
         int newArg = arg * 10 + digitPart;
         int restNumPart = RestNum(newArg);     //if restNum returns -1, it means that null production is chosen
-        if (restNumPart == -1 ) {
-            return newArg;
-        }
         return restNumPart;
     }
 
