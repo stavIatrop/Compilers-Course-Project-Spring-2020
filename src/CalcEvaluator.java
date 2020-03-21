@@ -82,14 +82,16 @@ public class CalcEvaluator {
         if (lookahead == '*') {
             consume('*');
             int parPart = Par(lookahead);
+            parPart = arg * parPart;
             int restTermPart = RestTerm(parPart);
-            return arg * restTermPart;
+            return restTermPart;
         }
         if (lookahead == '/') {
             consume('/');
             int parPart = Par(lookahead);
+            parPart = arg / parPart;
             int restTermPart = RestTerm(parPart);
-            return arg / restTermPart;
+            return restTermPart;
         }
 
         throw new ParseError();
