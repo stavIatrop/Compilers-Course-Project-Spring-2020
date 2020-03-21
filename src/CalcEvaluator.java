@@ -35,7 +35,7 @@ public class CalcEvaluator {
         //lookahead is a digit or '('
         int termPart = Term(lookahead);
         int restExpPart = RestExp(termPart);
-        return termPart + restExpPart;
+        return restExpPart;
     }
 
     private int Term(int arg) throws ParseError, IOException {
@@ -45,30 +45,32 @@ public class CalcEvaluator {
         }
         //lookahead is a digit or '('
         int parPart = Par(lookahead);
-        int restTermPart = RestTerm(parPart);  //if restTermPart returns -1, null production is chosen
+        int restTermPart = RestTerm(parPart);
         return restTermPart;
     }
 
     private int RestExp(int arg) throws ParseError, IOException {
 
         if (lookahead == ')' || lookahead == -1 || lookahead == '\n') { //null production
-            return 0;
+            return arg;
         }
         if (lookahead == '+') {
             consume('+');
             int termPart = Term(lookahead);
+            termPart = arg + termPart;
             int restExpPart = RestExp(termPart);
-            return  termPart + restExpPart;
+            return  restExpPart;
         }
         if (lookahead == '-') {
             consume('-');
             int termPart = Term(lookahead);
+            termPart = arg - termPart;
             int restExpPart = RestExp(termPart);
 
 //            System.out.println(arg);
 //            System.out.println(termPart);
 //            System.out.println(restExpPart);
-            return -termPart + restExpPart;
+            return restExpPart;
         }
 
         throw new ParseError();
