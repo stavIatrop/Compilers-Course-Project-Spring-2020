@@ -38,7 +38,6 @@ precedence left REVERSE;
 /**
  *  The Grammar Rules
  */
-
 reverse_exp ::= REVERSE STRING_LITERAL:s     {:System.out.println("StringBuilder input1 = new StringBuilder();");
                                     System.out.println("input1.append(\"" + s + "\");");
                                     System.out.println("input1 = input1.reverse();");
