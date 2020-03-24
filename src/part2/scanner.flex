@@ -81,15 +81,16 @@ Identifier = [:jletter:] [:jletterdigit:]*
  "}"      { return symbol(sym.RCURLPAREN); }
  "if"     { return  symbol(sym.IF); }
  "else"   { return symbol(sym.ELSE); }
- "reverse" {return  symbol(sym.REVERSE); }
-
- ";"      { return symbol(sym.SEMI); }              //may not be needed
+ "reverse" {return symbol(sym.REVERSE); }
+ "prefix" {return symbol(sym.PREFIX);}
   \"             { stringBuffer.setLength(0); yybegin(STRING); }
   {WhiteSpace} { /* just skip what was found, do nothing */ }
+   {Identifier} { return symbol(sym.IDENTIFIER, new String(yytext())); }
+
 }
 
 
-{Identifier} { return symbol(sym.IDENTIFIER, new String(yytext())); }
+
 
 <STRING> {
       \"                             { yybegin(YYINITIAL);
