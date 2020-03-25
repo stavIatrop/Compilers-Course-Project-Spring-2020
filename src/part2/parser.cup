@@ -25,8 +25,8 @@ terminal            CONCAT, LPAREN, RPAREN, COMMASEP, LCURLPAREN, RCURLPAREN, IF
 terminal String    STRING_LITERAL;        // our scanner provides strings
 
 /*  Non terminals */
-non terminal            exp_list, idList, body;
-non terminal String str, reverse_exp, exp, call, concat_exp, if_exp, decl;
+non terminal              idList, body;
+non terminal String str, reverse_exp, exp, call,restExpL, concat_exp,exp_list, if_exp, decl;
 
 /**
  *  Precedence Declarations
@@ -39,32 +39,55 @@ precedence left REVERSE;
  *  The Grammar Rules
  */
 
-decl ::= IDENTIFIER:id LPAREN idList:idl RPAREN LCURLPAREN body:bd RCURLPAREN       {: System.out.println(id + " (" + idl + "){\n\t" + bd + "\n}");:}
+// decl ::= IDENTIFIER:id LPAREN idList:idl RPAREN LCURLPAREN body:bd RCURLPAREN       {: System.out.println(id + " (" + idl + "){\n\t" + bd + "\n}");:}
+// ;
+
+exp ::= call:c                {: System.out.println(c); :}
+    | reverse_exp:revexp      {: RESULT = revexp; :}
+    | concat_exp:conexp       {: RESULT = conexp; :}  
+    | if_exp:ifexp            {: RESULT = ifexp; :}
+    | STRING_LITERAL:s      {: RESULT = s; :}
+    | IDENTIFIER:id         {: RESULT = id.toString(); :}
 ;
 
-call :: IDENTIFIER:id LPAREN exp_list:expl RPAREN                                   {: System.out.println(id + " (" + expl + ")" ); :}
+call ::= IDENTIFIER:id LPAREN exp_list:expl RPAREN       {: System.out.println(expl);
+                                                RESULT = (id + "(" + expl + ")" ); :}
 ;
 
-exp ::= call
-    | reverse_exp
-    | concat_exp
-    | if_exp
-    | STRING_LITERAL:s      {: System.out.println("System.out.println(\"" + s + "\");"); :}
-    | IDENTIFIER:id         {: System.out.println("System.out.println(" + id + ");"); :}
+exp_list ::= exp:e1 restExpL:l      {: RESULT = e1 + l; :}
+            | /*empty*/         {: RESULT = ""; :}
+;
+restExpL ::= COMMASEP exp:e2 restExpL:l  {: RESULT = ", " + e2 + l;:}
+            | /*empty*/             {: RESULT = ""; :}
+;
+reverse_exp ::= REVERSE exp:e1      {:StringBuilder input1 = new StringBuilder();
+                                    input1.append(e1);
+                                    input1 = input1.reverse();
+                                    String str1 = input1.toString();
+                                    System.out.println(str1);
+                                    RESULT = str1;:}
 ;
 
-reverse_exp ::= REVERSE STRING_LITERAL:s     {:System.out.println("StringBuilder input1 = new StringBuilder();");
-                                    System.out.println("input1.append(\"" + s + "\");");
-                                    System.out.println("input1 = input1.reverse();");
-                                    System.out.println("String str1 = input1.toString();");
-                                    System.out.println("System.out.println(str1);");:}
-
-            | REVERSE IDENTIFIER:id         {:System.out.println("StringBuilder input1 = new StringBuilder();");
-                                              System.out.println("input1.append(" + id + ");");
-                                              System.out.println("input1 = input1.reverse();");
-                                              System.out.println("String str1 = input1.toString();");
-                                              System.out.println("System.out.println(str1);"); :}
+concat_exp ::= exp:e1 CONCAT exp:e2  {:System.out.println(e1 + e2);
+                                    RESULT = e1+e2; :}
 ;
+
+
+
+
+
+// reverse_exp ::= REVERSE STRING_LITERAL:s     {:System.out.println("StringBuilder input1 = new StringBuilder();");
+//                                     System.out.println("input1.append(\"" + s + "\");");
+//                                     System.out.println("input1 = input1.reverse();");
+//                                     System.out.println("String str1 = input1.toString();");
+//                                     System.out.println("System.out.println(str1);");:}
+
+//             | REVERSE IDENTIFIER:id         {:System.out.println("StringBuilder input1 = new StringBuilder();");
+//                                               System.out.println("input1.append(" + id + ");");
+//                                               System.out.println("input1 = input1.reverse();");
+//                                               System.out.println("String str1 = input1.toString();");
+//                                               System.out.println("System.out.println(str1);"); :}
+// ;
 
 //
 //expr_list ::= expr_list expr:e SEMI         {: System.out.println(e);:}
