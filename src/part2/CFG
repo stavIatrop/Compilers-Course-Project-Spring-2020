@@ -1,0 +1,33 @@
+program --> declarations
+
+
+declarations --> fun_decl declarations
+		|fun_calls
+
+fun_calls --> call fun_calls
+		|*empty*
+
+fun_decl --> Identifier '(' id_list ')' '{' body '}'
+
+
+call --> Identifier '(' expr_list ')'
+
+id_list --> Identifier restIds
+	|*empty*
+
+restIds --> , Identifier restIds
+		|*empty*
+
+expr_list --> exp restExr 
+		|*empty*
+
+restExpr --> , exp restExpr
+		|*empty*
+
+body --> exp
+	|*empty*
+
+exp --> REVERSE exp
+	|exp CONCAT exp
+	|IF '(' prefix_exp ')' exp ELSE exp  
+

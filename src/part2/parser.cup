@@ -25,8 +25,9 @@ terminal            CONCAT, LPAREN, RPAREN, COMMASEP, LCURLPAREN, RCURLPAREN, IF
 terminal String    STRING_LITERAL;        // our scanner provides strings
 
 /*  Non terminals */
-non terminal              idList, body;
-non terminal String str, reverse_exp, exp, call,restExpL, concat_exp,exp_list, if_exp, decl;
+non terminal              id_list, body;
+non terminal String     reverse_exp, exp, call,restExpL, concat_exp,exp_list, if_exp, fun_decl, program, fun_calls, call, restIdentifiers;
+non terminal Boolean prefix_exp;
 
 /**
  *  Precedence Declarations
@@ -38,42 +39,77 @@ precedence left REVERSE;
 /**
  *  The Grammar Rules
  */
-
-// decl ::= IDENTIFIER:id LPAREN idList:idl RPAREN LCURLPAREN body:bd RCURLPAREN       {: System.out.println(id + " (" + idl + "){\n\t" + bd + "\n}");:}
-// ;
-
-exp ::= call:c                {: System.out.println(c); :}
-    | reverse_exp:revexp      {: RESULT = revexp; :}
-    | concat_exp:conexp       {: RESULT = conexp; :}  
-    | if_exp:ifexp            {: RESULT = ifexp; :}
-    | STRING_LITERAL:s      {: RESULT = s; :}
-    | IDENTIFIER:id         {: RESULT = id.toString(); :}
+goal_prog ::= declarations:d         {:System.out.println(d);:}
 ;
 
-call ::= IDENTIFIER:id LPAREN exp_list:expl RPAREN       {: System.out.println(expl);
-                                                RESULT = (id + "(" + expl + ")" ); :}
+declarations ::= fun_decl:fd declarations:d  {:RESULT = fd + d;:}
+                |fun_calls:fc                {:RESULT = fc;:}
+;
+fun_calls ::= call:c fun_calls:fc             {:RESULT = c + fc;:}
+            |/*empty*/                        {:RESULT = "";:}
 ;
 
-exp_list ::= exp:e1 restExpL:l      {: RESULT = e1 + l; :}
+fun_decl ::= IDENTIFIER:id LPAREN id_list:idl RPAREN LCURLPAREN body:bd RCURLPAREN  {: RESULT = id + " (" + idl + "){\n\t" + bd + "\n}";:}
+;
+
+id_list ::= IDENTIFIER:id restIdentifiers:rest     {: RESULT = id + rest; :}
             | /*empty*/         {: RESULT = ""; :}
 ;
-restExpL ::= COMMASEP exp:e2 restExpL:l  {: RESULT = ", " + e2 + l;:}
+
+restIdentifiers ::= COMMASEP IDENTIFIER:id restExpL:l  {: RESULT = ", " + e2 + l;:}
             | /*empty*/             {: RESULT = ""; :}
 ;
-reverse_exp ::= REVERSE exp:e1      {:StringBuilder input1 = new StringBuilder();
+
+
+call ::= IDENTIFIER:id LPAREN exp_list:expl RPAREN       {:RESULT = (id + "(" + expl + ")" ); :}
+;
+
+exp ::=  exp:e1 CONCAT exp:e2  {:RESULT = e1+e2; :}
+        |REVERSE exp:e1      {:StringBuilder input1 = new StringBuilder();
                                     input1.append(e1);
                                     input1 = input1.reverse();
                                     String str1 = input1.toString();
-                                    System.out.println(str1);
                                     RESULT = str1;:}
-;
+        |IF LPAREN prefix_exp:prexp RPAREN LCURLPAREN RCURLPAREN {: RESULT = "if (" + prexp + ") {}"; :}
+        | STRING_LITERAL:s      {: RESULT = s; :}
+        | IDENTIFIER:id         {: RESULT = id.toString(); :}
+        ;
 
-concat_exp ::= exp:e1 CONCAT exp:e2  {:System.out.println(e1 + e2);
-                                    RESULT = e1+e2; :}
-;
+prefix_exp ::= exp:e1 PREFIX exp:e2 {: RESULT = e2.startsWith(e1); :}
+            ;
+
+// exp_list ::= exp:e1 restExpL:l      {: RESULT = e1 + l; :}
+//             | /*empty*/         {: RESULT = ""; :}
+// ;
+// restExpL ::= COMMASEP exp:e2 restExpL:l  {: RESULT = ", " + e2 + l;:}
+//             | /*empty*/             {: RESULT = ""; :}
+// ;
 
 
 
+
+
+
+// reverse_exp ::= REVERSE exp:e1      {:StringBuilder input1 = new StringBuilder();
+//                                     input1.append(e1);
+//                                     input1 = input1.reverse();
+//                                     String str1 = input1.toString();
+//                                     RESULT = str1;:}
+// ;
+
+// concat_exp ::= exp:e1 CONCAT exp:e2  {:RESULT = e1+e2; :}
+// ;
+
+// exp ::= call:c                {: System.out.println(c); :}
+//     | reverse_exp:revexp      {: RESULT = revexp; :}
+//     | concat_exp:conexp       {: RESULT = conexp; :}  
+//     | if_exp:ifexp            {: RESULT = ifexp; :}
+//     | STRING_LITERAL:s      {: RESULT = s; :}
+//     | IDENTIFIER:id         {: RESULT = id.toString(); :}
+// ;
+
+// if_exp ::= IF LPAREN prefix_exp:prexp RPAREN LCURLPAREN exp:e1 
+// ;
 
 
 // reverse_exp ::= REVERSE STRING_LITERAL:s     {:System.out.println("StringBuilder input1 = new StringBuilder();");
