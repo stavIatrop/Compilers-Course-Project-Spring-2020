@@ -29,5 +29,9 @@ body --> exp
 
 exp --> REVERSE exp
 	|exp CONCAT exp
-	|IF '(' prefix_exp ')' exp ELSE exp  
+	|IF '(' prefix_exp ')' exp ELSE exp
+	| Identifier
+	| String_Literal
+  
 
+prefix_exp --> exp PREFIX exp
