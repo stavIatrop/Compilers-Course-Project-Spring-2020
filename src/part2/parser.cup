@@ -26,7 +26,7 @@ terminal String    STRING_LITERAL;        // our scanner provides strings
 
 /*  Non terminals */
 non terminal              id_list, body;
-non terminal String     reverse_exp, exp, call,restExpL, concat_exp,exp_list, if_exp, fun_decl, program, fun_calls, call, restIdentifiers;
+non terminal String     goal_prog, declarations,fun_decl, fun_calls, call, restIds, exp,restExpL,exp_list;
 non terminal Boolean prefix_exp;
 
 /**
@@ -52,25 +52,37 @@ fun_calls ::= call:c fun_calls:fc             {:RESULT = c + fc;:}
 fun_decl ::= IDENTIFIER:id LPAREN id_list:idl RPAREN LCURLPAREN body:bd RCURLPAREN  {: RESULT = id + " (" + idl + "){\n\t" + bd + "\n}";:}
 ;
 
-id_list ::= IDENTIFIER:id restIdentifiers:rest     {: RESULT = id + rest; :}
-            | /*empty*/         {: RESULT = ""; :}
-;
-
-restIdentifiers ::= COMMASEP IDENTIFIER:id restExpL:l  {: RESULT = ", " + e2 + l;:}
-            | /*empty*/             {: RESULT = ""; :}
-;
-
-
 call ::= IDENTIFIER:id LPAREN exp_list:expl RPAREN       {:RESULT = (id + "(" + expl + ")" ); :}
 ;
 
-exp ::=  exp:e1 CONCAT exp:e2  {:RESULT = e1+e2; :}
+id_list ::= IDENTIFIER:id restIds:rest     {: RESULT = id + rest; :}
+            | /*empty*/         {: RESULT = ""; :}
+;
+
+restIds ::= COMMASEP IDENTIFIER:id restIds:rest  {: RESULT = ", " + id + rest;:}
+            | /*empty*/             {: RESULT = ""; :}
+;
+
+exp_list ::= exp:e1 restExpL:restl      {: RESULT = e1 + restl; :}
+            | /*empty*/         {: RESULT = ""; :}
+;
+
+restExpL ::= COMMASEP exp:e2 restExpL:restl  {: RESULT = ", " + e2 + restl;:}
+            | /*empty*/             {: RESULT = ""; :}
+;
+
+body ::= exp:e1        {: RESULT = e1; :}
+        |/*empty*/  {:RESULT = "";:}
+;
+
+exp ::= call:c                  {:RESULT = c;:} 
+        |exp:e1 CONCAT exp:e2  {:RESULT = e1+e2; :}
         |REVERSE exp:e1      {:StringBuilder input1 = new StringBuilder();
                                     input1.append(e1);
                                     input1 = input1.reverse();
                                     String str1 = input1.toString();
                                     RESULT = str1;:}
-        |IF LPAREN prefix_exp:prexp RPAREN LCURLPAREN RCURLPAREN {: RESULT = "if (" + prexp + ") {}"; :}
+        |IF LPAREN prefix_exp:prexp RPAREN exp:e1 ELSE exp:e2 {: RESULT = "if (" + prexp + ")\n\treturn " + e1 + ";\nelse\n\treturn " + e2 + ";\n"; :}
         | STRING_LITERAL:s      {: RESULT = s; :}
         | IDENTIFIER:id         {: RESULT = id.toString(); :}
         ;
@@ -78,12 +90,7 @@ exp ::=  exp:e1 CONCAT exp:e2  {:RESULT = e1+e2; :}
 prefix_exp ::= exp:e1 PREFIX exp:e2 {: RESULT = e2.startsWith(e1); :}
             ;
 
-// exp_list ::= exp:e1 restExpL:l      {: RESULT = e1 + l; :}
-//             | /*empty*/         {: RESULT = ""; :}
-// ;
-// restExpL ::= COMMASEP exp:e2 restExpL:l  {: RESULT = ", " + e2 + l;:}
-//             | /*empty*/             {: RESULT = ""; :}
-// ;
+
 
 
 
