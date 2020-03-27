@@ -26,7 +26,7 @@ terminal String    STRING_LITERAL;        // our scanner provides strings
 
 /*  Non terminals */
 non terminal              id_list, body;
-non terminal String     goal_prog, declarations,fun_decl, fun_calls, call, restIds, exp,restExpL,exp_list;
+non terminal String     goal_prog, declarations,fun_decl, fun_calls, call, restIds, exp,restExpL,exp_list, list;
 non terminal Boolean prefix_exp;
 
 /**
@@ -49,18 +49,18 @@ fun_calls ::= call:c fun_calls:fc             {:RESULT = c + fc;:}
             |/*empty*/                        {:RESULT = "";:}
 ;
 
-fun_decl ::= IDENTIFIER:id LPAREN id_list:idl RPAREN LCURLPAREN body:bd RCURLPAREN  {: RESULT = id + " (" + idl + "){\n\t" + bd + "\n}";:}
+fun_decl ::= IDENTIFIER:id  id_list:idl   body:bd RCURLPAREN  {: RESULT = id + " (" + idl + "){\n\t" + bd + "\n}";:}
 ;
 
-call ::= IDENTIFIER:id LPAREN exp_list:expl RPAREN       {:RESULT = (id + "(" + expl + ")" ); :}
+call ::= IDENTIFIER:id LPAREN exp_list:expl  RPAREN      {:RESULT = (id + "(" + expl + ")" ); :}
 ;
 
-id_list ::= IDENTIFIER:id restIds:rest     {: RESULT = id + rest; :}
+id_list ::= LPAREN IDENTIFIER:id restIds:rest  LCURLPAREN   {: RESULT = id + rest; :}
             | /*empty*/         {: RESULT = ""; :}
 ;
 
 restIds ::= COMMASEP IDENTIFIER:id restIds:rest  {: RESULT = ", " + id + rest;:}
-            | /*empty*/             {: RESULT = ""; :}
+            |RPAREN              {: RESULT = ""; :}
 ;
 
 exp_list ::= exp:e1 restExpL:restl      {: RESULT = e1 + restl; :}

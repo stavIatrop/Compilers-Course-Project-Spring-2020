@@ -27,7 +27,8 @@ restExpr --> , exp restExpr
 body --> exp
 	|*empty*
 
-exp --> REVERSE exp
+exp --> call
+	|REVERSE exp
 	|exp CONCAT exp
 	|IF '(' prefix_exp ')' exp ELSE exp
 	| Identifier
