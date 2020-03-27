@@ -21,7 +21,7 @@ scan with {: return s.next_token(); :};
  */
 
 /* Terminals (tokens returned by the scanner). */
-terminal            CONCAT, LPAREN, RPAREN, COMMASEP, LCURLPAREN, RCURLPAREN, IF, ELSE, REVERSE, PREFIX, IDENTIFIER;
+terminal            CONCAT, LPAREN, RPAREN, COMMASEP, LCURLPAREN, RCURLPAREN, IF, ELSE, REVERSE, PREFIX, IDENTIFIER, KEYWORD;
 terminal String    STRING_LITERAL;        // our scanner provides strings
 
 /*  Non terminals */
@@ -34,6 +34,7 @@ non terminal String     goal_prog, declarations,fun_decl, exp_calls, call, restI
 precedence left IF;
 precedence left CONCAT;
 precedence left REVERSE;
+precedence left COMMASEP;
 
 /**
  *  The Grammar Rules
@@ -56,27 +57,37 @@ exp_calls ::= exp:e exp_calls:ec          {:RESULT = "\t\tSystem.out.println(" +
             |/*empty*/                   {:RESULT = "";:}
 ;
 
-fun_decl ::= IDENTIFIER:id LPAREN id_list:idl RPAREN LCURLPAREN body:bd RCURLPAREN  {: RESULT = "\tpublic static String " + id + " (" + idl + "){\n\t\t" + bd + "\n\t}\n";:}
+fun_decl ::= IDENTIFIER:id LPAREN id_list:idl  body:bd RCURLPAREN  {: RESULT = "\tpublic static String " + id + " (" + idl + "){\n\t\t" + bd + "\n\t}\n";:}
+;
+
+// id_list ::=  IDENTIFIER:e2 COMMASEP id_list:e KEYWORD
+//                 |IDENTIFIER:e1 KEYWORD
+//                 |KEYWORD
+//                 ;
+
+id_list ::=  IDENTIFIER:id restIds:rest  KEYWORD   {: RESULT = "String " + id + rest; :}
+            |KEYWORD       {: RESULT = ""; :}
+;
+
+restIds ::= COMMASEP IDENTIFIER:id restIds:rest  {: RESULT = ", String " + id + rest;:}
+            |/*empty*/              {: RESULT = ""; :}
 ;
 
 call ::= IDENTIFIER:id LPAREN exp_list:expl  RPAREN      {:RESULT = (  id + "(" + expl + ")" ); :}
 ;
+ 
+// exp_list ::=  exp:e2 COMMASEP exp_list:e 
+//                 |exp:e1
+//                 |
+//                 ;
 
-id_list ::=  IDENTIFIER:id restIds:rest     {: RESULT = id + rest; :}
+exp_list ::= exp:e1 restExpL:restl      {: RESULT = e1 + restl; :}
             |/*empty*/         {: RESULT = ""; :}
 ;
 
-restIds ::= COMMASEP IDENTIFIER:id restIds:rest  {: RESULT = ", " + id + rest;:}
-            |/*empty*/              {: RESULT = ""; :}
+restExpL ::= COMMASEP exp:e2 restExpL:restl  {: RESULT = ", " + e2 + restl;:}
+            |/*empty*/             {: RESULT = ""; :}
 ;
-
-// exp_list ::= exp:e1 restExpL:restl      {: RESULT = e1 + restl; :}
-//             |/*empty*/         {: RESULT = ""; :}
-// ;
-
-// restExpL ::= COMMASEP exp:e2 restExpL:restl  {: RESULT = ", " + e2 + restl;:}
-//             |/*empty*/             {: RESULT = ""; :}
-// ;
 
 body ::= exp:e1        {: RESULT = "return " + e1 + ";"; :}
         |/*empty*/  {:RESULT = "return \"\";";:}

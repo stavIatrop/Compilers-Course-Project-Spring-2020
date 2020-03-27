@@ -1,1 +1,14 @@
-reverse stav
+name() {                 
+"John"
+}
+surname() {
+"Doe"
+}
+fullname(first_name, sep, last_name) {
+first_name + sep + last_name
+}
+stav(bar) {
+}
+name()
+surname()
+lastname("stav", " ", "iatrop")

@@ -65,6 +65,7 @@ WhiteSpace     = {LineTerminator} | [ \t\f]
    or just a zero.  */
 
 Identifier = [:jletter:] [:jletterdigit:]*
+Keyword = [)]{WhiteSpace}*[{]
 
 %state STRING
 
@@ -86,7 +87,7 @@ Identifier = [:jletter:] [:jletterdigit:]*
   \"             { stringBuffer.setLength(0); yybegin(STRING); }
   {WhiteSpace} { /* just skip what was found, do nothing */ }
    {Identifier} { return symbol(sym.IDENTIFIER, new String(yytext())); }
-
+   {Keyword} {return symbol(sym.KEYWORD, new String(yytext()));}
 }
 
 
