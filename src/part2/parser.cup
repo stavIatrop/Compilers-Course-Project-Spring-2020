@@ -26,8 +26,7 @@ terminal String    STRING_LITERAL;        // our scanner provides strings
 
 /*  Non terminals */
 non terminal              id_list, body;
-non terminal String     goal_prog, declarations,fun_decl, fun_calls, call, restIds, exp,restExpL,exp_list, list;
-non terminal Boolean prefix_exp;
+non terminal String     goal_prog, declarations,fun_decl, exp_calls, call, restIds, exp,restExpL,exp_list, list, prefix_exp;
 
 /**
  *  Precedence Declarations
@@ -39,55 +38,59 @@ precedence left REVERSE;
 /**
  *  The Grammar Rules
  */
-goal_prog ::= declarations:d         {:System.out.println(d);:}
+goal_prog ::= declarations:d         {:System.out.println("public class Main {\n" +
+                                                "\tpublic static String reverse_fun(String str){\n" +
+                                                "\t\tStringBuilder input1 = new StringBuilder();\n" +
+                                                "\t\tinput1.append(str);\n" +
+                                                "\t\tinput1 = input1.reverse();\n" +
+                                                "\t\tString str1 = input1.toString();\n" +
+                                                "\t\treturn str1;\n" +
+                                                "\t}\n" +
+                                                 d + "\n}");:}
 ;
 
 declarations ::= fun_decl:fd declarations:d  {:RESULT = fd + d;:}
-                |fun_calls:fc                {:RESULT = fc;:}
+                |exp_calls:ec                {:RESULT = "\tpublic static void main(String[] args) {\n" + ec + "\n\t}"; :}
 ;
-fun_calls ::= call:c fun_calls:fc             {:RESULT = c + fc;:}
-            |/*empty*/                        {:RESULT = "";:}
-;
-
-fun_decl ::= IDENTIFIER:id  id_list:idl   body:bd RCURLPAREN  {: RESULT = id + " (" + idl + "){\n\t" + bd + "\n}";:}
+exp_calls ::= exp:e exp_calls:ec          {:RESULT = "\t\tSystem.out.println(" + e + ");\n" + ec;:}
+            |/*empty*/                   {:RESULT = "";:}
 ;
 
-call ::= IDENTIFIER:id LPAREN exp_list:expl  RPAREN      {:RESULT = (id + "(" + expl + ")" ); :}
+fun_decl ::= IDENTIFIER:id LPAREN id_list:idl RPAREN LCURLPAREN body:bd RCURLPAREN  {: RESULT = "\tpublic static String " + id + " (" + idl + "){\n\t\t" + bd + "\n\t}\n";:}
 ;
 
-id_list ::= LPAREN IDENTIFIER:id restIds:rest  LCURLPAREN   {: RESULT = id + rest; :}
-            | /*empty*/         {: RESULT = ""; :}
+call ::= IDENTIFIER:id LPAREN exp_list:expl  RPAREN      {:RESULT = (  id + "(" + expl + ")" ); :}
+;
+
+id_list ::=  IDENTIFIER:id restIds:rest     {: RESULT = id + rest; :}
+            |/*empty*/         {: RESULT = ""; :}
 ;
 
 restIds ::= COMMASEP IDENTIFIER:id restIds:rest  {: RESULT = ", " + id + rest;:}
-            |RPAREN              {: RESULT = ""; :}
+            |/*empty*/              {: RESULT = ""; :}
 ;
 
-exp_list ::= exp:e1 restExpL:restl      {: RESULT = e1 + restl; :}
-            | /*empty*/         {: RESULT = ""; :}
-;
+// exp_list ::= exp:e1 restExpL:restl      {: RESULT = e1 + restl; :}
+//             |/*empty*/         {: RESULT = ""; :}
+// ;
 
-restExpL ::= COMMASEP exp:e2 restExpL:restl  {: RESULT = ", " + e2 + restl;:}
-            | /*empty*/             {: RESULT = ""; :}
-;
+// restExpL ::= COMMASEP exp:e2 restExpL:restl  {: RESULT = ", " + e2 + restl;:}
+//             |/*empty*/             {: RESULT = ""; :}
+// ;
 
-body ::= exp:e1        {: RESULT = e1; :}
-        |/*empty*/  {:RESULT = "";:}
+body ::= exp:e1        {: RESULT = "return " + e1 + ";"; :}
+        |/*empty*/  {:RESULT = "return \"\";";:}
 ;
 
 exp ::= call:c                  {:RESULT = c;:} 
-        |exp:e1 CONCAT exp:e2  {:RESULT = e1+e2; :}
-        |REVERSE exp:e1      {:StringBuilder input1 = new StringBuilder();
-                                    input1.append(e1);
-                                    input1 = input1.reverse();
-                                    String str1 = input1.toString();
-                                    RESULT = str1;:}
-        |IF LPAREN prefix_exp:prexp RPAREN exp:e1 ELSE exp:e2 {: RESULT = "if (" + prexp + ")\n\treturn " + e1 + ";\nelse\n\treturn " + e2 + ";\n"; :}
-        | STRING_LITERAL:s      {: RESULT = s; :}
+        |exp:e1 CONCAT exp:e2  {:RESULT = e1 + " + " + e2; :}
+        |REVERSE exp:e1      {: RESULT = "reverse_fun(" + e1 + " )";:}
+        |IF LPAREN prefix_exp:prexp RPAREN exp:e1 ELSE exp:e2 {: RESULT = "(" + prexp + " ? " + e1 + " : " + e2 + ")"; :}
+        | STRING_LITERAL:s      {: RESULT = "\"" + s + "\"" ; :}
         | IDENTIFIER:id         {: RESULT = id.toString(); :}
         ;
 
-prefix_exp ::= exp:e1 PREFIX exp:e2 {: RESULT = e2.startsWith(e1); :}
+prefix_exp ::= exp:e1 PREFIX exp:e2 {: RESULT = e2 + ".startsWith(" + e1 + ")"; :}
             ;
 
 
