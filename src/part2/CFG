@@ -10,13 +10,15 @@ fun_calls --> call fun_calls
 fun_decl --> Identifier '(' id_list ')' '{' body '}'
 
 
-call --> Identifier '(' expr_list ')'
+id_list --> Identifier restIds ')' '{'
+	|')' '{'
 
-id_list --> Identifier restIds
-	|*empty*
 
 restIds --> , Identifier restIds
 		|*empty*
+
+call --> Identifier '(' expr_list ')'
+
 
 expr_list --> exp restExr 
 		|*empty*

@@ -11,4 +11,4 @@ stav(bar) {
 }
 name()
 surname()
-lastname("stav", " ", "iatrop")
+fullname(name(), " ", surname())

@@ -3,6 +3,8 @@
  *  Package and Import Specifications
  */
 import java_cup.runtime.*;
+import java.io.FileWriter;
+import java.io.IOException;  // Import the IOException class to handle errors
 
 /**
  *  Usercode Components
@@ -39,7 +41,10 @@ precedence left COMMASEP;
 /**
  *  The Grammar Rules
  */
-goal_prog ::= declarations:d         {:System.out.println("public class Main {\n" +
+goal_prog ::= declarations:d         {:
+                                        try {  
+                                                FileWriter myWriter = new FileWriter("Main.java");
+                                                myWriter.write("public class Main {\n" +
                                                 "\tpublic static String reverse_fun(String str){\n" +
                                                 "\t\tStringBuilder input1 = new StringBuilder();\n" +
                                                 "\t\tinput1.append(str);\n" +
@@ -47,7 +52,30 @@ goal_prog ::= declarations:d         {:System.out.println("public class Main {\n
                                                 "\t\tString str1 = input1.toString();\n" +
                                                 "\t\treturn str1;\n" +
                                                 "\t}\n" +
-                                                 d + "\n}");:}
+                                                "\tpublic static boolean isPrefixOf(String str1, String str2){   //method for checking if str1 is prefix of str2\n" +
+                                                "\t\treturn (str2).startsWith(str1);\n" +
+                                                "\t}\n" +
+                                                 d + "\n}");
+                                                myWriter.close();
+                                                System.out.println("Successfully wrote to the file.");
+                                        } catch (IOException e) {
+                                                System.out.println("An error occurred.");
+                                                e.printStackTrace();
+                                        } 
+                                                // System.out.println("public class Main {\n" +
+                                                // "\tpublic static String reverse_fun(String str){\n" +
+                                                // "\t\tStringBuilder input1 = new StringBuilder();\n" +
+                                                // "\t\tinput1.append(str);\n" +
+                                                // "\t\tinput1 = input1.reverse();\n" +
+                                                // "\t\tString str1 = input1.toString();\n" +
+                                                // "\t\treturn str1;\n" +
+                                                // "\t}\n" +
+                                                // "\tpublic static boolean isPrefixOf(String str1, String str2){   //method for checking if str1 is prefix of str2\n" +
+                                                // "\t\treturn (str2).startsWith(str1);\n" +
+                                                // "\t}\n" +
+                                                //  d + "\n}");
+                                                 
+                                                 :}
 ;
 
 declarations ::= fun_decl:fd declarations:d  {:RESULT = fd + d;:}
@@ -101,60 +129,5 @@ exp ::= call:c                  {:RESULT = c;:}
         | IDENTIFIER:id         {: RESULT = id.toString(); :}
         ;
 
-prefix_exp ::= exp:e1 PREFIX exp:e2 {: RESULT = e2 + ".startsWith(" + e1 + ")"; :}
+prefix_exp ::= exp:e1 PREFIX exp:e2 {: RESULT = "isPrefixOf(" + e1 + ", " + e2 + ")"; :}
             ;
-
-
-
-
-
-
-
-
-// reverse_exp ::= REVERSE exp:e1      {:StringBuilder input1 = new StringBuilder();
-//                                     input1.append(e1);
-//                                     input1 = input1.reverse();
-//                                     String str1 = input1.toString();
-//                                     RESULT = str1;:}
-// ;
-
-// concat_exp ::= exp:e1 CONCAT exp:e2  {:RESULT = e1+e2; :}
-// ;
-
-// exp ::= call:c                {: System.out.println(c); :}
-//     | reverse_exp:revexp      {: RESULT = revexp; :}
-//     | concat_exp:conexp       {: RESULT = conexp; :}  
-//     | if_exp:ifexp            {: RESULT = ifexp; :}
-//     | STRING_LITERAL:s      {: RESULT = s; :}
-//     | IDENTIFIER:id         {: RESULT = id.toString(); :}
-// ;
-
-// if_exp ::= IF LPAREN prefix_exp:prexp RPAREN LCURLPAREN exp:e1 
-// ;
-
-
-// reverse_exp ::= REVERSE STRING_LITERAL:s     {:System.out.println("StringBuilder input1 = new StringBuilder();");
-//                                     System.out.println("input1.append(\"" + s + "\");");
-//                                     System.out.println("input1 = input1.reverse();");
-//                                     System.out.println("String str1 = input1.toString();");
-//                                     System.out.println("System.out.println(str1);");:}
-
-//             | REVERSE IDENTIFIER:id         {:System.out.println("StringBuilder input1 = new StringBuilder();");
-//                                               System.out.println("input1.append(" + id + ");");
-//                                               System.out.println("input1 = input1.reverse();");
-//                                               System.out.println("String str1 = input1.toString();");
-//                                               System.out.println("System.out.println(str1);"); :}
-// ;
-
-//
-//expr_list ::= expr_list expr:e SEMI         {: System.out.println(e);:}
-//            | expr:e SEMI                   {: System.out.println(e);:}
-//;
-//expr      ::= expr:e1 PLUS  expr:e2         {: RESULT = e1+e2;       :}
-//             | expr:e1 MINUS expr:e2        {: RESULT = e1-e2;       :}
-//             | expr:e1 TIMES expr:e2        {: RESULT = e1*e2;       :}
-//             | MINUS expr:e                 {: RESULT = -e;          :}
-//  	         %prec UMINUS
-//             | LPAREN expr:e RPAREN	        {: RESULT = e;           :}
-//             | NUMBER:n	                    {: RESULT = n;           :}
-//             ;
