@@ -64,14 +64,14 @@ WhiteSpace     = {LineTerminator} | [ \t\f]
    one and nine followed by zero or more numbers between zero and nine
    or just a zero.  */
 
-Identifier = [:jletter:] [:jletterdigit:]*
+Identifier = [:jletter:] [:jletterdigit:]*      /*from JFlex documentation*/
 Keyword = [)]{WhiteSpace}*[{]
 
 %state STRING
 
 %%
 /* ------------------------Lexical Rules Section---------------------- */
-/* τα states είναι η φάση στην οποία βρίσκετε ο lexer στην ουσία, αν βρίσκεται στην YYINITIAL θα αναγνωρίζει lexical rules που έχουν οριστεί μόνο σε αυτό το state, για να μπορούμε να ξεχωρίζουμε το περιεχομενο των strings */
+
 <YYINITIAL> {
 /* operators */
  "+"      { return symbol(sym.CONCAT); }

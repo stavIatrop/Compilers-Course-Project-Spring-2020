@@ -66,10 +66,6 @@ public class CalcEvaluator {
             int termPart = Term(lookahead);
             termPart = arg - termPart;
             int restExpPart = RestExp(termPart);
-
-//            System.out.println(arg);
-//            System.out.println(termPart);
-//            System.out.println(restExpPart);
             return restExpPart;
         }
 
@@ -122,17 +118,11 @@ public class CalcEvaluator {
         }
         //lookahead is a digit
         int digitPart = Digit(lookahead);
-        int restNumPart = RestNum(digitPart);     //if restNum returns -1, it means that null production is chosen
+        int restNumPart = RestNum(digitPart);
         return restNumPart;
-//        String digitStr = Integer.toString(digitPart);
-//        if (restNumPart >= 0) {
-//
-//            String restNumStr = Integer.toString(restNumPart);
-//            digitStr = digitStr + restNumStr;
-//        }
-//        int finalNum = Integer.parseInt(digitStr);
-//        return finalNum;
+
     }
+
     private int RestNum(int arg) throws ParseError, IOException {
 
         if(lookahead == ')' || lookahead == '+' || lookahead == '-' || lookahead == '*'
@@ -145,7 +135,7 @@ public class CalcEvaluator {
         //lookahead is a digit
         int digitPart = Digit(lookahead);
         int newArg = arg * 10 + digitPart;
-        int restNumPart = RestNum(newArg);     //if restNum returns -1, it means that null production is chosen
+        int restNumPart = RestNum(newArg);
         return restNumPart;
     }
 

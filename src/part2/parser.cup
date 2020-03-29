@@ -26,9 +26,8 @@ scan with {: return s.next_token(); :};
 terminal            CONCAT, LPAREN, RPAREN, COMMASEP, LCURLPAREN, RCURLPAREN, IF, ELSE, REVERSE, PREFIX, IDENTIFIER, KEYWORD;
 terminal String    STRING_LITERAL;        // our scanner provides strings
 
-/*  Non terminals */
-non terminal              id_list, body;
-non terminal String     goal_prog, declarations,fun_decl, exp_calls, call, restIds, exp,restExpL,exp_list, list, prefix_exp;
+/*  Non terminals */             
+non terminal String     goal_prog, declarations, fun_decl, exp_calls, call, restIds, exp, restExpL, exp_list, prefix_exp, id_list, body;
 
 /**
  *  Precedence Declarations
@@ -45,7 +44,7 @@ goal_prog ::= declarations:d         {:
                                         try {  
                                                 FileWriter myWriter = new FileWriter("Main.java");
                                                 myWriter.write("public class Main {\n" +
-                                                "\tpublic static String reverse_fun(String str){\n" +
+                                                "\tpublic static String reverse_fun(String str){  //method for reversing String str\n" +
                                                 "\t\tStringBuilder input1 = new StringBuilder();\n" +
                                                 "\t\tinput1.append(str);\n" +
                                                 "\t\tinput1 = input1.reverse();\n" +
@@ -61,20 +60,7 @@ goal_prog ::= declarations:d         {:
                                         } catch (IOException e) {
                                                 System.out.println("An error occurred.");
                                                 e.printStackTrace();
-                                        } 
-                                                // System.out.println("public class Main {\n" +
-                                                // "\tpublic static String reverse_fun(String str){\n" +
-                                                // "\t\tStringBuilder input1 = new StringBuilder();\n" +
-                                                // "\t\tinput1.append(str);\n" +
-                                                // "\t\tinput1 = input1.reverse();\n" +
-                                                // "\t\tString str1 = input1.toString();\n" +
-                                                // "\t\treturn str1;\n" +
-                                                // "\t}\n" +
-                                                // "\tpublic static boolean isPrefixOf(String str1, String str2){   //method for checking if str1 is prefix of str2\n" +
-                                                // "\t\treturn (str2).startsWith(str1);\n" +
-                                                // "\t}\n" +
-                                                //  d + "\n}");
-                                                 
+                                        }                                                 
                                                  :}
 ;
 
@@ -88,11 +74,6 @@ exp_calls ::= exp:e exp_calls:ec          {:RESULT = "\t\tSystem.out.println(" +
 fun_decl ::= IDENTIFIER:id LPAREN id_list:idl  body:bd RCURLPAREN  {: RESULT = "\tpublic static String " + id + " (" + idl + "){\n\t\t" + bd + "\n\t}\n";:}
 ;
 
-// id_list ::=  IDENTIFIER:e2 COMMASEP id_list:e KEYWORD
-//                 |IDENTIFIER:e1 KEYWORD
-//                 |KEYWORD
-//                 ;
-
 id_list ::=  IDENTIFIER:id restIds:rest  KEYWORD   {: RESULT = "String " + id + rest; :}
             |KEYWORD       {: RESULT = ""; :}
 ;
@@ -103,11 +84,7 @@ restIds ::= COMMASEP IDENTIFIER:id restIds:rest  {: RESULT = ", String " + id + 
 
 call ::= IDENTIFIER:id LPAREN exp_list:expl  RPAREN      {:RESULT = (  id + "(" + expl + ")" ); :}
 ;
- 
-// exp_list ::=  exp:e2 COMMASEP exp_list:e 
-//                 |exp:e1
-//                 |
-//                 ;
+
 
 exp_list ::= exp:e1 restExpL:restl      {: RESULT = e1 + restl; :}
             |/*empty*/         {: RESULT = ""; :}
