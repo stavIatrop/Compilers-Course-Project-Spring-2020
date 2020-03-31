@@ -78,7 +78,6 @@ Keyword = [)]{WhiteSpace}*[{]
  "("      { return symbol(sym.LPAREN); }
  ")"      { return symbol(sym.RPAREN); }
  ","      { return  symbol(sym.COMMASEP); }
- "{"      { return symbol(sym.LCURLPAREN); }
  "}"      { return symbol(sym.RCURLPAREN); }
  "if"     { return  symbol(sym.IF); }
  "else"   { return symbol(sym.ELSE); }

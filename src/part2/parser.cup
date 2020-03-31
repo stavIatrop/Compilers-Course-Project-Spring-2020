@@ -3,8 +3,6 @@
  *  Package and Import Specifications
  */
 import java_cup.runtime.*;
-import java.io.FileWriter;
-import java.io.IOException;  // Import the IOException class to handle errors
 
 /**
  *  Usercode Components
@@ -23,7 +21,7 @@ scan with {: return s.next_token(); :};
  */
 
 /* Terminals (tokens returned by the scanner). */
-terminal            CONCAT, LPAREN, RPAREN, COMMASEP, LCURLPAREN, RCURLPAREN, IF, ELSE, REVERSE, PREFIX, IDENTIFIER, KEYWORD;
+terminal            CONCAT, LPAREN, RPAREN, COMMASEP, RCURLPAREN, IF, ELSE, REVERSE, PREFIX, IDENTIFIER, KEYWORD;
 terminal String    STRING_LITERAL;        // our scanner provides strings
 
 /*  Non terminals */             
@@ -32,18 +30,16 @@ non terminal String     goal_prog, declarations, fun_decl, exp_calls, call, rest
 /**
  *  Precedence Declarations
  */
+precedence left COMMASEP;
 precedence left IF;
 precedence left CONCAT;
 precedence left REVERSE;
-precedence left COMMASEP;
 
 /**
  *  The Grammar Rules
  */
-goal_prog ::= declarations:d         {:
-                                        try {  
-                                                FileWriter myWriter = new FileWriter("Main.java");
-                                                myWriter.write("public class Main {\n" +
+goal_prog ::= declarations:d         {: System.out.println(
+                                                "public class Main {\n" +
                                                 "\tpublic static String reverse_fun(String str){  //method for reversing String str\n" +
                                                 "\t\tStringBuilder input1 = new StringBuilder();\n" +
                                                 "\t\tinput1.append(str);\n" +
@@ -55,12 +51,26 @@ goal_prog ::= declarations:d         {:
                                                 "\t\treturn (str2).startsWith(str1);\n" +
                                                 "\t}\n" +
                                                  d + "\n}");
-                                                myWriter.close();
-                                                System.out.println("Successfully wrote to the file.");
-                                        } catch (IOException e) {
-                                                System.out.println("An error occurred.");
-                                                e.printStackTrace();
-                                        }                                                 
+                                        // try {  
+                                        //         FileWriter myWriter = new FileWriter("Main.java");
+                                        //         myWriter.write("public class Main {\n" +
+                                        //         "\tpublic static String reverse_fun(String str){  //method for reversing String str\n" +
+                                        //         "\t\tStringBuilder input1 = new StringBuilder();\n" +
+                                        //         "\t\tinput1.append(str);\n" +
+                                        //         "\t\tinput1 = input1.reverse();\n" +
+                                        //         "\t\tString str1 = input1.toString();\n" +
+                                        //         "\t\treturn str1;\n" +
+                                        //         "\t}\n" +
+                                        //         "\tpublic static boolean isPrefixOf(String str1, String str2){   //method for checking if str1 is prefix of str2\n" +
+                                        //         "\t\treturn (str2).startsWith(str1);\n" +
+                                        //         "\t}\n" +
+                                        //          d + "\n}");
+                                        //         myWriter.close();
+                                        //         System.out.println("Successfully wrote to the file.");
+                                        // } catch (IOException e) {
+                                        //         System.out.println("An error occurred.");
+                                        //         e.printStackTrace();
+                                        // }                                                 
                                                  :}
 ;
 
@@ -100,7 +110,7 @@ body ::= exp:e1        {: RESULT = "return " + e1 + ";"; :}
 
 exp ::= call:c                  {:RESULT = c;:} 
         |exp:e1 CONCAT exp:e2  {:RESULT = e1 + " + " + e2; :}
-        |REVERSE exp:e1      {: RESULT = "reverse_fun(" + e1 + " )";:}
+        |REVERSE exp:e1      {: RESULT = "reverse_fun(" + e1 + ")";:}
         |IF LPAREN prefix_exp:prexp RPAREN exp:e1 ELSE exp:e2 {: RESULT = "(" + prexp + " ? " + e1 + " : " + e2 + ")"; :}
         | STRING_LITERAL:s      {: RESULT = "\"" + s + "\"" ; :}
         | IDENTIFIER:id         {: RESULT = id.toString(); :}
