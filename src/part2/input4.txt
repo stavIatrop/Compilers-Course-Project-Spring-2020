@@ -1,0 +1,39 @@
+foo() {
+
+reverse reverse if ("1" + "2" prefix
+	 if ("3" prefix "34") "2"
+		else "1")
+		 "first"
+	 else "second"
+}
+
+bar(x, y, z) {
+
+	if (x prefix y)
+		if (y prefix x)
+			y + "=" + x
+		else
+			y + "=/=" + x
+	else
+		if (x prefix z)
+			if (z prefix x)
+				z + "=" + x
+			else
+				z + "=/=" + x
+		else
+			if (y prefix z)
+				if (z prefix y)
+					z + "=" + y
+				else
+					z + "=/=" + y
+			else
+				"all different"
+}
+
+
+foo()
+bar("stav", "iatrop", "ina")
+bar("python", "java", "python")
+bar("c++", "c++", "php")
+bar("life", "love", "love")
+"that's" + reverse "lla" + "folks!"

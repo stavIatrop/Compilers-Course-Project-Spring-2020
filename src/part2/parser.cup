@@ -30,7 +30,7 @@ non terminal String     goal_prog, declarations, fun_decl, exp_calls, call, rest
 /**
  *  Precedence Declarations
  */
-precedence left COMMASEP;
+precedence left COMMASEP;       //precedence to comma separator to resolve shift/reduce conflict
 precedence left IF;
 precedence left CONCAT;
 precedence left REVERSE;
@@ -50,27 +50,7 @@ goal_prog ::= declarations:d         {: System.out.println(
                                                 "\tpublic static boolean isPrefixOf(String str1, String str2){   //method for checking if str1 is prefix of str2\n" +
                                                 "\t\treturn (str2).startsWith(str1);\n" +
                                                 "\t}\n" +
-                                                 d + "\n}");
-                                        // try {  
-                                        //         FileWriter myWriter = new FileWriter("Main.java");
-                                        //         myWriter.write("public class Main {\n" +
-                                        //         "\tpublic static String reverse_fun(String str){  //method for reversing String str\n" +
-                                        //         "\t\tStringBuilder input1 = new StringBuilder();\n" +
-                                        //         "\t\tinput1.append(str);\n" +
-                                        //         "\t\tinput1 = input1.reverse();\n" +
-                                        //         "\t\tString str1 = input1.toString();\n" +
-                                        //         "\t\treturn str1;\n" +
-                                        //         "\t}\n" +
-                                        //         "\tpublic static boolean isPrefixOf(String str1, String str2){   //method for checking if str1 is prefix of str2\n" +
-                                        //         "\t\treturn (str2).startsWith(str1);\n" +
-                                        //         "\t}\n" +
-                                        //          d + "\n}");
-                                        //         myWriter.close();
-                                        //         System.out.println("Successfully wrote to the file.");
-                                        // } catch (IOException e) {
-                                        //         System.out.println("An error occurred.");
-                                        //         e.printStackTrace();
-                                        // }                                                 
+                                                 d + "\n}");                                                 
                                                  :}
 ;
 
