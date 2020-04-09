@@ -9,7 +9,6 @@
 out/
 
 *.pdf
-*.jar
 
 /src/part2/Parser.java
 /src/part2/sym.java
