@@ -16,8 +16,8 @@ public class Main {
         MiniJavaParser parser = new MiniJavaParser(fis);
         Goal root = parser.Goal();
         System.err.println("Program parsed successfully.");
-        EvalVisitor eval = new EvalVisitor();
-        System.out.println(root.accept(eval, null));
+        //EvalVisitor eval = new EvalVisitor();
+        //System.out.println(root.accept(eval, null));
         ///////////////////////////////////////////////
     }
     catch(ParseException ex){
