@@ -11,13 +11,16 @@ public class Main {
     FileInputStream fis = null;
     try{
         fis = new FileInputStream(args[0]);
-        //following block may need change
-        ///////////////////////////////////////////////
         MiniJavaParser parser = new MiniJavaParser(fis);
         Goal root = parser.Goal();
         System.err.println("Program parsed successfully.");
-        //EvalVisitor eval = new EvalVisitor();
-        //System.out.println(root.accept(eval, null));
+        //following block may need change
+        ///////////////////////////////////////////////
+
+        //visitor that scans the parse tree an creates symbol table
+        FirstPhaseVisitor first = new FirstPhaseVisitor();
+        root.accept(first, null);
+
         ///////////////////////////////////////////////
     }
     catch(ParseException ex){
