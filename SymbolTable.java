@@ -6,13 +6,14 @@ public class SymbolTable {		//structure of each scope's hashmap
 	HashMap<String, NameInfo> hm;
 
 
-	public ScopeStruct() {
+	public SymbolTable() {
 		hm = new HashMap<String, NameInfo>();
 	}	
 
-	public String enter() {			//enters a new scope level, creates new table
-
-		return "";
+	public NameInfo enter(String name) {			//enters a new scope level, creates new table
+		ClassInfo cInfo = new ClassInfo("class");
+		hm.put(name, cInfo);
+		return cInfo;							//return the new scope level that was created
 	}
 
 	public String insert(String name, String name_info) {	//creates entry for name in current scope, adds at current level

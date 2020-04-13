@@ -16,10 +16,10 @@ public class Main {
         System.err.println("Program parsed successfully.");
         //following block may need change
         ///////////////////////////////////////////////
-
+        SymbolTable sTable = new SymbolTable();
         //visitor that scans the parse tree an creates symbol table
         FirstPhaseVisitor first = new FirstPhaseVisitor();
-        root.accept(first, null);
+        root.accept(first, sTable);
 
         ///////////////////////////////////////////////
     }

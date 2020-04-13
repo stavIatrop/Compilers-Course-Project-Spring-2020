@@ -3,12 +3,36 @@ import visitor.GJDepthFirst;
 
 public class FirstPhaseVisitor extends GJDepthFirst<String, String> {
 
+
+    /**
+    * f0 -> "class"
+    * f1 -> Identifier()
+    * f2 -> "{"
+    * f3 -> ( VarDeclaration() )*
+    * f4 -> ( MethodDeclaration() )*
+    * f5 -> "}"
+    */
+    public String visit(ClassDeclaration n, SymbolTable sTable) {
+      String _ret=null;
+      String name;
+      n.f0.accept(this, argu);
+      name = n.f1.accept(this, argu);  //name = n.f1.f0.toString(); also works	
+      NameInfo nInfo = sTable.enter(name);
+
+      n.f2.accept(this, argu);
+      n.f3.accept(this, nInfo);
+      n.f4.accept(this, nInfo);     ///I STOPPED HERE YESTERDAY...
+      n.f5.accept(this, argu);
+      return _ret;
+   }
+
+
    /**
     * f0 -> Type()
     * f1 -> Identifier()
     * f2 -> ";"
     */
-   public String visit(VarDeclaration n, String argu) {
+   public String visit(VarDeclaration n, NameInfo nInfo) {
       String _ret=null;
       String type, id;
       type = n.f0.accept(this, argu);
@@ -30,25 +54,7 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, String> {
       return "boolean[]";
    } 
 
-    /**
-    * f0 -> "class"
-    * f1 -> Identifier()
-    * f2 -> "{"
-    * f3 -> ( VarDeclaration() )*
-    * f4 -> ( MethodDeclaration() )*
-    * f5 -> "}"
-    */
-   public String visit(ClassDeclaration n, String argu) {
-      String _ret=null;
-      String name;
-      n.f0.accept(this, argu);
-      name = n.f1.accept(this, argu);  //name = n.f1.f0.toString(); also works	 
-      n.f2.accept(this, argu);
-      n.f3.accept(this, name + " :: ");
-      n.f4.accept(this, name + " :: " );
-      n.f5.accept(this, argu);
-      return _ret;
-   }
+   
 
    /**
     * f0 -> "public"
