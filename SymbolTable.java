@@ -20,17 +20,37 @@ public class SymbolTable {
 
 }
 
-class TableStruct {		//structure of each scope's hashmap
+class ScopeStruct {		//structure of each scope's hashmap
 
 	HashMap<String, NameInfo> hm;
 
 
-	public TableStruct() {
+	public ScopeStruct() {
 		hm = new HashMap<String, NameInfo>();
 	}	
 }
 
-class NameInfo {	//structure of a declared name's info
+class NameInfo {
 
+	String type_id;		//identifier of type var, class or function
 
+}
+
+class VarInfo extends NameInfo{		//structure of a declared variable's info
+	
+	String type;	//int or boolean
+
+}
+
+class ClassInfo extends NameInfo {	//structure of a declared class' info
+	
+	HashMap<String, NameInfo> class_scope;
+
+}
+
+class FunInfo extends Nameinfo {		//structure of a declared function's info
+
+	String return_type;
+	String[] arg_types;
+	boolean isVirtual;
 }
