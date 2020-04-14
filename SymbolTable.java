@@ -3,12 +3,36 @@ import java.util.LinkedHashMap;
 
 public class SymbolTable {		//structure of each scope's hashmap
 
-	LinkedHashMap<String, ClassInfo> hm;
+	LinkedHashMap<String, ClassInfo> hmap;
 
 
 	public SymbolTable() {
-		hm = new LinkedHashMap<String, ClassInfo>();
-	}	
+		hmap = new LinkedHashMap<String, ClassInfo>();
+	}
+	
+	public void printSTable() {
+
+		for (String ClassStr : hmap.keySet() ) {
+
+			System.out.println("Class: " + ClassStr);
+			ClassInfo cinfo = hmap.get(ClassStr);
+			System.out.println("Class variables:");
+			for (String VarStr : cinfo.class_vars.keySet()) {
+
+				VarInfo vinfo = cinfo.class_vars.get(VarStr);
+				String type = vinfo.type;
+				System.out.println(type + " " + VarStr);
+			}
+			System.out.println("Class methods: ");
+			for (String MethodStr : cinfo.class_methods.keySet()) {
+
+				FunInfo funinfo = cinfo.class_methods.get(MethodStr);
+				String rettype = funinfo.return_type;
+				ArrayList<String>  argtypes = funinfo.arg_types;
+				System.out.println(rettype + " " + MethodStr + " " + "( " + argtypes + " )" );
+			}
+		}
+	}
 
 }
 

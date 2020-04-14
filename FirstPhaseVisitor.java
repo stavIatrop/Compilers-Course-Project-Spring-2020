@@ -64,10 +64,10 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       String name;
       n.f0.accept(this, sTable);
       name = n.f1.accept(this, sTable);  //name = n.f1.f0.toString(); also works	
-
+      this.currentClass = name;           //keep track of the class that is being "investigated"
       n.f2.accept(this, sTable);
       n.f3.accept(this, sTable);
-      n.f4.accept(this, sTable);     ///I STOPPED HERE YESTERDAY...
+      n.f4.accept(this, sTable);
       n.f5.accept(this, sTable);
       return _ret;
    }
