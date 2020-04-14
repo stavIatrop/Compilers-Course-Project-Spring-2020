@@ -1,65 +1,79 @@
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class SymbolTable {		//structure of each scope's hashmap
 
-	HashMap<String, NameInfo> hm;
+	LinkedHashMap<String, ClassInfo> hm;
 
 
 	public SymbolTable() {
-		hm = new HashMap<String, NameInfo>();
+		hm = new LinkedHashMap<String, ClassInfo>();
 	}	
 
-	public NameInfo enter(String name) {			//enters a new scope level, creates new table
-		ClassInfo cInfo = new ClassInfo("class");
-		hm.put(name, cInfo);
-		return cInfo;							//return the new scope level that was created
-	}
-
-	public String insert(String name, String name_info) {	//creates entry for name in current scope, adds at current level
-
-		return "";
-	}
-
-	public String lookup(String name) {		//lookup a name, return(?) an entry			
-
-		return "";
-	}
 }
 
 
-class NameInfo {
+// class NameInfo {
 
-	String type_id;		//identifier of type var, class or function
+// 	String type_id;		//identifier of type var, class or function
 
-	public NameInfo(String typeid) {
+// 	public NameInfo(String typeid) {
 
-		type_id = typeid;
+// 		type_id = typeid;
+// 	}
+// }
+
+class ClassInfo  {	//structure of a declared class' info
+	
+	LinkedHashMap<String, VarInfo> class_vars;
+	LinkedHashMap<String, FunInfo> class_methods;
+	String parentClass;
+	ArrayList<String> children;
+
+	public ClassInfo() {
+
+		class_vars = new LinkedHashMap<String, VarInfo>();
+		class_methods = new LinkedHashMap<String, FunInfo>();
+		children = new ArrayList<String>();
 	}
+
 }
 
-class VarInfo extends NameInfo{		//structure of a declared variable's info
+class VarInfo {		//structure of a declared variable's info
 	
 	String type;	//int or boolean
-	String value;
+	String value;	//might not be needed
 
-	public VarInfo(String typeid, String tp, String val) {
-		super("var");
+	public VarInfo( String tp, String val) {
 		type = tp;
 		value = val;
 	}
 
 }
 
+class FunInfo  {		//structure of a declared function's info
 
-class VarArrayInfo extends NameInfo{		//structure of a declared array's info
+	String return_type;
+	ArrayList<String> arg_types;
+	boolean isVirtual;
+
+	public FunInfo( String rettype, ArrayList<String> argtypes,boolean isvirtual) {
+		return_type = rettype;
+		arg_types = new ArrayList<String>();
+		for (String str : argtypes){
+			arg_types.add(str);
+		}
+		isVirtual = isvirtual;
+	}
+}
+
+class VarArrayInfo {		//structure of a declared array's info
 	
 	String type;	//int[] or boolean[]
 	int size;
 	ArrayList<String> values;
 
-	public VarArrayInfo(String typeid, String tp, int sz, ArrayList<String> vals) {
-		super("var");
+	public VarArrayInfo( String tp, int sz, ArrayList<String> vals) {
 		type = tp;
 		size = sz;
 		values = new ArrayList<String>();
@@ -71,31 +85,3 @@ class VarArrayInfo extends NameInfo{		//structure of a declared array's info
 
 }
 
-
-class ClassInfo extends NameInfo {	//structure of a declared class' info
-	
-	HashMap<String, NameInfo> class_scope;
-
-	public ClassInfo(String typeid) {
-		super("class");
-		class_scope = new HashMap<String, NameInfo>();
-	}
-
-}
-
-class FunInfo extends Nameinfo {		//structure of a declared function's info
-
-	String return_type;
-	ArrayList<String> arg_types;
-	boolean isVirtual;
-
-	public FunInfo(String typeid, String rettype, ArrayList<String> argtypes,boolean isvirtual) {
-		super("function");
-		return_type = rettype;
-		arg_types = new ArrayList<String>();
-		for (String str : argtypes){
-			arg_types.add(str);
-		}
-		isVirtual = isvirtual;
-	}
-}
