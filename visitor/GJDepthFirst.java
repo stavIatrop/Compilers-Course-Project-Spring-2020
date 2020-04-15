@@ -6,6 +6,8 @@ package visitor;
 import syntaxtree.*;
 import java.util.*;
 
+import parse_error.ParseError;
+
 /**
  * Provides default methods which visit each node in the tree in depth-first
  * order.  Your visitors may extend this class.
@@ -14,7 +16,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
-   public R visit(NodeList n, A argu) {
+   public R visit(NodeList n, A argu) throws ParseError{
       if (n.size() == 1)
          return n.elementAt(0).accept(this,argu);
       R _ret=null;
@@ -26,7 +28,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       return _ret;
    }
 
-   public R visit(NodeListOptional n, A argu) {
+   public R visit(NodeListOptional n, A argu) throws ParseError{
       if ( n.present() ) {
          if (n.size() == 1)
             return n.elementAt(0).accept(this,argu);
@@ -42,14 +44,14 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
          return null;
    }
 
-   public R visit(NodeOptional n, A argu) {
+   public R visit(NodeOptional n, A argu) throws ParseError{
       if ( n.present() )
          return n.node.accept(this,argu);
       else
          return null;
    }
 
-   public R visit(NodeSequence n, A argu) {
+   public R visit(NodeSequence n, A argu) throws ParseError{
       if (n.size() == 1)
          return n.elementAt(0).accept(this,argu);
       R _ret=null;
@@ -61,7 +63,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       return _ret;
    }
 
-   public R visit(NodeToken n, A argu) { return null; }
+   public R visit(NodeToken n, A argu) throws ParseError  { return null; }
 
    //
    // User-generated visitor methods below
@@ -72,7 +74,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     * f1 -> ( TypeDeclaration() )*
     * f2 -> <EOF>
     */
-   public R visit(Goal n, A argu) {
+   public R visit(Goal n, A argu) throws ParseError {
       R _ret=null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
@@ -100,7 +102,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     * f16 -> "}"
     * f17 -> "}"
     */
-   public R visit(MainClass n, A argu) {
+   public R visit(MainClass n, A argu) throws ParseError{
       R _ret=null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);

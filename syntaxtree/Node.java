@@ -4,12 +4,14 @@
 
 package syntaxtree;
 
+import parse_error.ParseError;
+
 /**
  * The interface which all syntax tree classes must implement.
  */
 public interface Node extends java.io.Serializable {
    public void accept(visitor.Visitor v);
-   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu);
+   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) throws ParseError;
    public <R> R accept(visitor.GJNoArguVisitor<R> v);
    public <A> void accept(visitor.GJVoidVisitor<A> v, A argu);
 }

@@ -15,6 +15,10 @@ class A {
 	}
 }
 
+class A {
+	int mpourda;
+}
+
 class B extends A {
 	int othernum;
 }

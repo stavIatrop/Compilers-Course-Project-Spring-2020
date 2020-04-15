@@ -1,6 +1,7 @@
 import syntaxtree.*;
 import visitor.*;
 import java.io.*;
+import parse_error.*;
 
 public class Main {
     public static void main (String [] args){
@@ -19,8 +20,14 @@ public class Main {
         SymbolTable sTable = new SymbolTable();
         //visitor that scans the parse tree an creates symbol table
         FirstPhaseVisitor first = new FirstPhaseVisitor();
-        root.accept(first, sTable);
+        try {
+            root.accept(first, sTable);
 
+        }
+        catch (ParseError err) {
+            System.out.println(err.getMessage());
+        }
+        sTable.printSTable();
         ///////////////////////////////////////////////
     }
     catch(ParseException ex){
