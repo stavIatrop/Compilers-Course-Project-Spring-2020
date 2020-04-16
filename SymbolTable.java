@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import parse_error.*;
 
 public class SymbolTable {		//structure of each scope's hashmap
 
@@ -12,17 +11,17 @@ public class SymbolTable {		//structure of each scope's hashmap
 		System.out.println("Symbol Table created.");
 	}
 	
-	public void enter(String className) throws ParseError {
+	public boolean enter(String className, boolean mainclass) {
 
 		System.out.println(className + " is going to be inserted.");
 
 		if (hmap.containsKey(className)) {		//class with the same name already declared
-			throw new ParseError("Class with the same name declared");
+			return false;
 		}
 		
-		hmap.put(className, new ClassInfo());
+		hmap.put(className, new ClassInfo(mainclass));
 		System.out.println(className + " inserted");
-		return;
+		return true;
 	}
 
 	public void printSTable() {
@@ -69,12 +68,14 @@ class ClassInfo  {	//structure of a declared class' info
 	LinkedHashMap<String, FunInfo> class_methods;
 	String parentClass;
 	ArrayList<String> children;
+	boolean isMain;
 
-	public ClassInfo() {
+	public ClassInfo(boolean ismain) {
 
 		class_vars = new LinkedHashMap<String, VarInfo>();
 		class_methods = new LinkedHashMap<String, FunInfo>();
 		children = new ArrayList<String>();
+		isMain = ismain;
 	}
 
 }

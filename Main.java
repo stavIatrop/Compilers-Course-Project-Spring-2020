@@ -25,7 +25,8 @@ public class Main {
 
         }
         catch (ParseError err) {
-            System.out.println(err.getMessage());
+            System.out.println("Parse Error: " + err.getMessage());
+            return;
         }
         sTable.printSTable();
         ///////////////////////////////////////////////

@@ -3,7 +3,8 @@
 //
 
 package syntaxtree;
-import parse_error.*;
+
+import parse_error.ParseError;
 
 /**
  * Grammar production:
@@ -91,7 +92,7 @@ public class MainClass implements Node {
    public void accept(visitor.Visitor v) {
       v.visit(this);
    }
-   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) throws ParseError {
+   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) throws ParseError{
       return v.visit(this,argu);
    }
    public <R> R accept(visitor.GJNoArguVisitor<R> v) {

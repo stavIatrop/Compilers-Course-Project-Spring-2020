@@ -16,21 +16,18 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     * f4 -> ( MethodDeclaration() )*
     * f5 -> "}"
     */
-    public String visit(ClassDeclaration n, SymbolTable sTable) {
+    public String visit(ClassDeclaration n, SymbolTable sTable) throws ParseError{
       String _ret=null;
       String name;
       n.f0.accept(this, sTable);
       name = n.f1.accept(this, sTable);      //name = n.f1.f0.toString(); 	also works
       System.out.println(name);
       this.currentClass = name;           //keep track of the class that is being "investigated"
-      try {
-         sTable.enter(name);
-      }
-      catch(ParseError err){
-            System.err.println(err.getMessage());
+      boolean entered = sTable.enter(name, false);
+      if (!entered){
+         throw new ParseError("Class with name " + name + " already declared");      
       }
       
-
       n.f2.accept(this, sTable);
 
 

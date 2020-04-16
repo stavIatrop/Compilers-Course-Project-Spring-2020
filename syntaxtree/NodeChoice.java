@@ -4,6 +4,8 @@
 
 package syntaxtree;
 
+import parse_error.ParseError;
+
 /**
  * Represents a grammar choice, e.g. ( A | B )
  */
@@ -20,7 +22,7 @@ public class NodeChoice implements Node {
    public void accept(visitor.Visitor v) {
       choice.accept(v);
    }
-   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) {
+   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) throws ParseError{
       return choice.accept(v,argu);
    }
    public <R> R accept(visitor.GJNoArguVisitor<R> v) {
