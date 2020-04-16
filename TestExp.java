@@ -8,15 +8,11 @@ class A {
 	int num;
 	boolean bool;
 	boolean[] bool2;
-	public int fun(int num) {
+	public int fun(int num, boolean x) {
 		int num_aux;
 		A obj;
 		return 2;
 	}
-}
-
-class A {
-	int mpourda;
 }
 
 class B extends A {

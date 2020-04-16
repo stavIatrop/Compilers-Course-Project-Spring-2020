@@ -13,20 +13,17 @@ public class SymbolTable {		//structure of each scope's hashmap
 	
 	public boolean enter(String className, boolean mainclass) {
 
-		System.out.println(className + " is going to be inserted.");
-
 		if (hmap.containsKey(className)) {		//class with the same name already declared
 			return false;
 		}
 		
 		hmap.put(className, new ClassInfo(mainclass));
-		System.out.println(className + " inserted");
 		return true;
 	}
 
+
 	public void printSTable() {
 
-		System.out.println(hmap.keySet());
 		for (String ClassStr : hmap.keySet() ) {
 
 			System.out.println("Class: " + ClassStr);
@@ -43,8 +40,12 @@ public class SymbolTable {		//structure of each scope's hashmap
 
 				FunInfo funinfo = cinfo.class_methods.get(MethodStr);
 				String rettype = funinfo.return_type;
-				ArrayList<String>  argtypes = funinfo.arg_types;
-				System.out.println(rettype + " " + MethodStr + " " + "( " + argtypes + " )" );
+				System.out.print(rettype + " " + MethodStr + " " + "( ");
+				for (String ParamStr : funinfo.arg_types.keySet()) {
+					String type = funinfo.arg_types.get(ParamStr).type;
+					System.out.print(type + " " + ParamStr + " ");
+				}
+				System.out.println(")");
 			}
 		}
 	}
@@ -95,16 +96,15 @@ class VarInfo {		//structure of a declared variable's info
 class FunInfo  {		//structure of a declared function's info
 
 	String return_type;
-	ArrayList<String> arg_types;
+	LinkedHashMap<String, VarInfo> arg_types;
 	boolean isVirtual;
+	LinkedHashMap<String, VarInfo> fun_vars;
 
-	public FunInfo( String rettype, ArrayList<String> argtypes,boolean isvirtual) {
+	public FunInfo( String rettype, boolean isvirtual) {
 		return_type = rettype;
-		arg_types = new ArrayList<String>();
-		for (String str : argtypes){
-			arg_types.add(str);
-		}
+		arg_types = new LinkedHashMap<String, VarInfo>();
 		isVirtual = isvirtual;
+		fun_vars = new LinkedHashMap<String, VarInfo>();
 	}
 }
 
