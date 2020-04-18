@@ -4,9 +4,9 @@ import parse_error.*;
 
 public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
-   String currentClass = null;
-   boolean classVar = false;
-   String currentMethod = null;
+   String currentClass = null;            //keep track of the class that is being "investigated"
+   boolean classVar = false;              //keep track of the scope of the variable (class field or function variable)
+   String currentMethod = null;           //keep track of the function that is being "investigated"
 
 
       /**
@@ -67,8 +67,8 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       String name;
       n.f0.accept(this, sTable);
       name = n.f1.accept(this, sTable);      //name = n.f1.f0.toString(); 	also works
-      this.currentClass = name;           //keep track of the class that is being "investigated"
-      boolean entered = sTable.enter(name, false);
+      this.currentClass = name;           
+      boolean entered = sTable.enter(null, name, false);
       if (!entered){
          throw new ParseError("Class with name " + name + " already declared");      
       }
@@ -80,6 +80,42 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       n.f5.accept(this, sTable);
       return _ret;
    }
+
+      /**
+    * f0 -> "class"
+    * f1 -> Identifier()
+    * f2 -> "extends"
+    * f3 -> Identifier()
+    * f4 -> "{"
+    * f5 -> ( VarDeclaration() )*
+    * f6 -> ( MethodDeclaration() )*
+    * f7 -> "}"
+    */
+   public String visit(ClassExtendsDeclaration n, SymbolTable sTable) throws ParseError{
+      String _ret=null;
+      String name;
+      String parentClass;
+      n.f0.accept(this, sTable);
+      name = n.f1.accept(this, sTable);
+      this.currentClass = name;
+      n.f2.accept(this, sTable);
+      parentClass = n.f3.accept(this, sTable);
+      boolean parentDeclared = sTable.checkParent(parentClass);
+      if (!parentDeclared) {
+         throw new ParseError("Parent class " + parentClass + " has not been declared.");
+      }
+      boolean entered = sTable.enter(parentClass, name, false);
+      if (!entered){
+         throw new ParseError("Class with name " + name + " already declared.");      
+      }
+      n.f4.accept(this, sTable);
+      this.classVar = true;
+      n.f5.accept(this, sTable);
+      n.f6.accept(this, sTable);
+      n.f7.accept(this, sTable);
+      return _ret;
+   }
+
 
    /**
     * f0 -> "public"
@@ -219,29 +255,4 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     public String visit(IntegerArrayType n, SymbolTable sTable) throws ParseError{
       return "int[]";
    }
-
-   
-   /**
-    * f0 -> "class"
-    * f1 -> Identifier()
-    * f2 -> "extends"
-    * f3 -> Identifier()
-    * f4 -> "{"
-    * f5 -> ( VarDeclaration() )*
-    * f6 -> ( MethodDeclaration() )*
-    * f7 -> "}"
-    */
-   // public String visit(ClassExtendsDeclaration n, SymbolTable sTable) {
-   //    String _ret=null;
-   //    String name;
-   //    n.f0.accept(this, sTable);
-   //    name = n.f1.accept(this, sTable);
-   //    n.f2.accept(this, sTable);
-   //    n.f3.accept(this, sTable);
-   //    n.f4.accept(this, sTable);
-   //    n.f5.accept(this, sTable);
-   //    n.f6.accept(this, sTable);
-   //    n.f7.accept(this, sTable);
-   //    return _ret;
-   // }
 }

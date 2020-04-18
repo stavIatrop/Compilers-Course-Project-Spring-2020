@@ -11,16 +11,28 @@ public class SymbolTable {		//structure of each scope's hashmap
 		System.out.println("Symbol Table created.");
 	}
 	
-	public boolean enter(String className, boolean mainclass) {
+	public boolean enter(String parentClass, String className, boolean mainclass) {			//function for creating new class scope
 
 		if (hmap.containsKey(className)) {		//class with the same name already declared
 			return false;
 		}
 		
-		hmap.put(className, new ClassInfo(mainclass));
+		hmap.put(className, new ClassInfo(parentClass, mainclass));
+		if (parentClass != null) {	//insert child to parent class
+
+			ClassInfo cinfo = hmap.get(parentClass);
+			cinfo.children.add(className);
+		}
 		return true;
 	}
 
+	public boolean checkParent(String parentClass) {			//function for checking former declaration of parent class
+
+		if (hmap.containsKey(parentClass)) {	//it means that parent class has been declared before its children
+			return true;
+		}
+		return false;
+	}
 
 	public void printSTable() {
 
@@ -52,17 +64,6 @@ public class SymbolTable {		//structure of each scope's hashmap
 
 }
 
-
-// class NameInfo {
-
-// 	String type_id;		//identifier of type var, class or function
-
-// 	public NameInfo(String typeid) {
-
-// 		type_id = typeid;
-// 	}
-// }
-
 class ClassInfo  {	//structure of a declared class' info
 	
 	LinkedHashMap<String, VarInfo> class_vars;
@@ -71,12 +72,13 @@ class ClassInfo  {	//structure of a declared class' info
 	ArrayList<String> children;
 	boolean isMain;
 
-	public ClassInfo(boolean ismain) {
+	public ClassInfo(String parent, boolean ismain) {
 
 		class_vars = new LinkedHashMap<String, VarInfo>();
 		class_methods = new LinkedHashMap<String, FunInfo>();
 		children = new ArrayList<String>();
 		isMain = ismain;
+		parentClass = parent;
 	}
 
 }
