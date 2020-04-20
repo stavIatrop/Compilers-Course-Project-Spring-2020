@@ -17,4 +17,15 @@ class A {
 
 class B extends A {
 	int othernum;
+	public int fun(int num, boolean x){
+		return 0;
+	}
+
+}
+
+class C extends B {
+
+	public int fun(int num, boolean x){
+		return 0;
+	}
 }

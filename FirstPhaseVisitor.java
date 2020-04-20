@@ -145,10 +145,17 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       if (cinfo.class_methods.containsKey(funName)) {
          throw new ParseError("Function name " + funName + " already declared in class " + this.currentClass);
       }
+       
       cinfo.class_methods.put(funName, new FunInfo(return_type, false));          //Needs extra code for virtual
 
       n.f3.accept(this, sTable);
       n.f4.accept(this, sTable);
+      
+      boolean checkOver = sTable.checkOverriding(this.currentClass, this.currentMethod);
+      if (!checkOver) {
+         throw new ParseError("Overriding error at method " + this.currentMethod + " of class " + this.currentClass +
+                     ": overriding method should have same name, return type and argument types as the overriden method.");
+      }
       n.f5.accept(this, sTable);
       n.f6.accept(this, sTable);
       this.classVar = false;
@@ -187,7 +194,7 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
          if (finfo.arg_types.containsKey(id)) {
             throw new ParseError("Duplicate parameter " + id + " in function " + this.currentMethod);
          }
-         finfo.arg_types.put(id, new VarInfo(type, null));
+         finfo.arg_types.put(id, type);
       }
       
       return type + " " + id;
@@ -219,7 +226,7 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
          if (cinfo.class_vars.containsKey(id)) {		//field with the same name already declared
             throw new ParseError("Field with name " + id + " in class " + this.currentClass + " already declared");
          }
-         cinfo.class_vars.put(id, new VarInfo(type, null));
+         cinfo.class_vars.put(id, type);
          return type + " " + id;
       }
       //if variable declared is a method variable
@@ -230,7 +237,7 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       } else if (finfo.arg_types.containsKey(id)) {
          throw new ParseError("Local variable and function parameter have the same name " + id + " in function " + this.currentMethod);
       }
-      finfo.fun_vars.put(id, new VarInfo(type, null));
+      finfo.fun_vars.put(id, type);
       n.f2.accept(this, sTable);
       return type + " " + id;
    }

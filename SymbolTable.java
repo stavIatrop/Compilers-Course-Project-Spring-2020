@@ -17,7 +17,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 			return false;
 		}
 		
-		hmap.put(className, new ClassInfo(parentClass, mainclass));
+		hmap.put(className, new ClassInfo(parentClass));
 		if (parentClass != null) {	//insert child to parent class
 
 			ClassInfo cinfo = hmap.get(parentClass);
@@ -34,6 +34,58 @@ public class SymbolTable {		//structure of each scope's hashmap
 		return false;
 	}
 
+	public boolean checkOverriding(String className, String methodName ) {
+
+		ClassInfo childClass = hmap.get(className);
+		FunInfo CurrMethod = childClass.class_methods.get(methodName);
+		ClassInfo parent_Class;		//keep track of parentClass if exists
+		String parentName;
+		if (hmap.get(className).parentClass == null) {	//method does not inherits from another class
+			return true;
+		}
+		boolean flag = true;
+		parentName = childClass.parentClass;	//initialize first ancestor
+		parent_Class = hmap.get(parentName);
+		FunInfo ParentMethod;
+		while(flag) {
+
+			for (String MethodStr : parent_Class.class_methods.keySet()) {
+
+				if (MethodStr == methodName) {										//1st requirement, same name
+
+					ParentMethod = parent_Class.class_methods.get(MethodStr);
+					if (CurrMethod.return_type == ParentMethod.return_type ) {		//2nd requirement, same return type
+
+						ArrayList<String> parentArgs = new ArrayList<String>();
+						ArrayList<String> childArgs = new ArrayList<String>();
+						parentArgs.addAll(ParentMethod.arg_types.values());
+						childArgs.addAll(CurrMethod.arg_types.values());
+						
+						if (parentArgs.equals(childArgs) ) {						//3rd requirement, same (ordered) argument types, valuable use of LinkedHashmap here to check the insertion order
+							CurrMethod.isOverriding = true;
+							return true;
+						}
+						
+					}else {
+						return false;	//method name same, but return type not
+					}
+					return false; 	//method name same, but arg types not
+					
+				}
+			}
+			//next ancestor if exists
+			if (parent_Class.parentClass != null) {
+				parentName = parent_Class.parentClass;
+				parent_Class = hmap.get(parentName);
+			}else {
+				flag = false;
+			}
+			
+
+		}
+		return true;	//not overriding any method, no parse errors
+	}
+
 	public void printSTable() {
 
 		for (String ClassStr : hmap.keySet() ) {
@@ -43,8 +95,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 			System.out.println("Class variables:");
 			for (String VarStr : cinfo.class_vars.keySet()) {
 
-				VarInfo vinfo = cinfo.class_vars.get(VarStr);
-				String type = vinfo.type;
+				String type = cinfo.class_vars.get(VarStr);;
 				System.out.println(type + " " + VarStr);
 			}
 			System.out.println("Class methods: ");
@@ -54,7 +105,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 				String rettype = funinfo.return_type;
 				System.out.print(rettype + " " + MethodStr + " " + "( ");
 				for (String ParamStr : funinfo.arg_types.keySet()) {
-					String type = funinfo.arg_types.get(ParamStr).type;
+					String type = funinfo.arg_types.get(ParamStr);
 					System.out.print(type + " " + ParamStr + " ");
 				}
 				System.out.println(")");
@@ -66,65 +117,44 @@ public class SymbolTable {		//structure of each scope's hashmap
 
 class ClassInfo  {	//structure of a declared class' info
 	
-	LinkedHashMap<String, VarInfo> class_vars;
+	LinkedHashMap<String, String> class_vars;
 	LinkedHashMap<String, FunInfo> class_methods;
 	String parentClass;
 	ArrayList<String> children;
-	boolean isMain;
 
-	public ClassInfo(String parent, boolean ismain) {
+	public ClassInfo(String parent) {
 
-		class_vars = new LinkedHashMap<String, VarInfo>();
+		class_vars = new LinkedHashMap<String, String>();
 		class_methods = new LinkedHashMap<String, FunInfo>();
 		children = new ArrayList<String>();
-		isMain = ismain;
 		parentClass = parent;
 	}
 
 }
 
-class VarInfo {		//structure of a declared variable's info
+// class VarInfo {		//structure of a declared variable's info
 	
-	String type;	//int or boolean
-	String value;	//might not be needed
+// 	String type;	//int or boolean
+// 	String value;	//might not be needed
 
-	public VarInfo( String tp, String val) {
-		type = tp;
-		value = val;
-	}
+// 	public VarInfo( String tp, String val) {
+// 		type = tp;
+// 		value = val;
+// 	}
 
-}
+// }
 
 class FunInfo  {		//structure of a declared function's info
 
 	String return_type;
-	LinkedHashMap<String, VarInfo> arg_types;
-	boolean isVirtual;
-	LinkedHashMap<String, VarInfo> fun_vars;
+	LinkedHashMap<String, String> arg_types;
+	boolean isOverriding;
+	LinkedHashMap<String, String> fun_vars;
 
-	public FunInfo( String rettype, boolean isvirtual) {
+	public FunInfo( String rettype, boolean isover) {
 		return_type = rettype;
-		arg_types = new LinkedHashMap<String, VarInfo>();
-		isVirtual = isvirtual;
-		fun_vars = new LinkedHashMap<String, VarInfo>();
+		arg_types = new LinkedHashMap<String, String>();
+		isOverriding = isover;
+		fun_vars = new LinkedHashMap<String, String>();
 	}
 }
-
-class VarArrayInfo {		//structure of a declared array's info
-	
-	String type;	//int[] or boolean[]
-	int size;
-	ArrayList<String> values;
-
-	public VarArrayInfo( String tp, int sz, ArrayList<String> vals) {
-		type = tp;
-		size = sz;
-		values = new ArrayList<String>();
-		for (String str : vals) {
-			
-			values.add(str);
-		}
-	}
-
-}
-
