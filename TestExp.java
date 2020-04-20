@@ -29,4 +29,7 @@ class C extends B {
 	public int fun(int num, boolean x){
 		return 0;
 	}
+	public int foo(){
+		return 0;
+	}
 }

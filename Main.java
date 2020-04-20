@@ -27,7 +27,7 @@ public class Main {
             System.out.println("Parse Error: " + err.getMessage());
             return;
         }
-        sTable.printSTable();
+        sTable.printOffsets();
         ///////////////////////////////////////////////
     }
     catch(ParseException ex){

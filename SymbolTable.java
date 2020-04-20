@@ -92,36 +92,53 @@ public class SymbolTable {		//structure of each scope's hashmap
 		offsets.put("boolean", 1);
 		offsets.put("int[]", 8);
 		offsets.put("boolean[]", 8);
-		Integer currentNumVars = 0;
-		Integer currentNumMethods = 0;
-		Integer offset = 0;
+		HashMap<String, Integer> offsetVars = new HashMap<String, Integer>();		//keep track of the offset enumeration of variables and methods to each class
+		HashMap<String, Integer> offsetMethods = new HashMap<String, Integer>();
+
 		for (String ClassStr : hmap.keySet() ) {
 			
 			ClassInfo cinfo = hmap.get(ClassStr);
-			if (cinfo.isMain)
-				continue; 
+			if (cinfo.isMain) {
+				offsetMethods.put(ClassStr, 0);
+				offsetVars.put(ClassStr, 0);
+				continue;
+			}
+			if (cinfo.parentClass == null ) {
+				offsetMethods.put(ClassStr, 0);
+				offsetVars.put(ClassStr, 0);
+			}else {			//this search only one ancestor "behind" works because
+							//LinkedHashMap stores the classes with insertion order
+							//and also because when we have "class B extends A”, A must be defined before B
+				offsetMethods.put(ClassStr, offsetMethods.get(cinfo.parentClass));
+				offsetVars.put(ClassStr, offsetVars.get(cinfo.parentClass));
+			}
+
 			System.out.println("-----------Class " + ClassStr + "-----------" );
 			System.out.println("---Variables---");
 			for (String VarStr : cinfo.class_vars.keySet()) {
 
 				String type = cinfo.class_vars.get(VarStr);
-				offset = currentNumVars;
-				System.out.println(ClassStr + "." + VarStr + " : " + currentNumVars);
-				currentNumVars = currentNumVars + offsets.get(type);
+				System.out.println(ClassStr + "." + VarStr + " : " + offsetVars.get(ClassStr));
+				if (!offsets.containsKey(type)) {
+					offsetVars.put(ClassStr, offsetVars.get(ClassStr) + 8);
+
+				}else {
+					offsetVars.put(ClassStr, offsetVars.get(ClassStr) + offsets.get(type));
+
+				}
 
 			}
-			System.out.println("Class methods: ");
+			System.out.println("---Methods---");
 			for (String MethodStr : cinfo.class_methods.keySet()) {
 
-				FunInfo funinfo = cinfo.class_methods.get(MethodStr);
-				String rettype = funinfo.return_type;
-				System.out.print(rettype + " " + MethodStr + " " + "( ");
-				for (String ParamStr : funinfo.arg_types.keySet()) {
-					String type = funinfo.arg_types.get(ParamStr);
-					System.out.print(type + " " + ParamStr + " ");
-				}
-				System.out.println(")");
+				if (cinfo.class_methods.get(MethodStr).isOverriding)
+					continue;
+				
+				System.out.println(ClassStr + "." + MethodStr + " : " + offsetMethods.get(ClassStr));
+				offsetMethods.put(ClassStr, offsetMethods.get(ClassStr) + 8);
 			}
+			System.out.println();
+
 		}
 	}
 	public void printSTable() {
@@ -164,6 +181,8 @@ class ClassInfo  {	//structure of a declared class' info
 	String parentClass;
 	ArrayList<String> children;
 	boolean isMain;
+	Integer VarEndOffset;
+	Integer MethodEndOffset;
 
 	public ClassInfo(String parent, boolean ismain) {
 
@@ -172,6 +191,7 @@ class ClassInfo  {	//structure of a declared class' info
 		children = new ArrayList<String>();
 		parentClass = parent;
 		isMain = ismain;
+
 	}
 
 }
