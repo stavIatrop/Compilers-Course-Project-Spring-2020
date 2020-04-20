@@ -1,5 +1,6 @@
 class TestExp {
 	public static void main(String[] args) {
+		int j;
 		System.out.println(new A().fun(10));
 	}
 }
@@ -25,7 +26,7 @@ class B extends A {
 
 class C extends B {
 
-	public int fun(int num, int x){
+	public int fun(int num, boolean x){
 		return 0;
 	}
 }

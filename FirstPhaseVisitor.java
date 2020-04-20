@@ -43,6 +43,13 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       n.f4.accept(this, sTable);
       n.f5.accept(this, sTable);
       n.f6.accept(this, sTable);
+      ClassInfo cinfo = sTable.hmap.get(this.currentClass);
+      if (cinfo.class_methods.containsKey("main")) {
+         throw new Exception("Function name main already declared in class " + this.currentClass);
+      }
+       
+      cinfo.class_methods.put("main", new FunInfo("void", false));
+
       n.f7.accept(this, sTable);
       n.f8.accept(this, sTable);
       n.f9.accept(this, sTable);
@@ -50,7 +57,8 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       n.f11.accept(this, sTable);
       n.f12.accept(this, sTable);
       n.f13.accept(this, sTable);
-      this.classVar = true;
+      this.classVar = false;
+      this.currentMethod = "main";
       n.f14.accept(this, sTable);
       n.f15.accept(this, sTable);
       n.f16.accept(this, sTable);
@@ -151,7 +159,7 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
          throw new Exception("Function name " + funName + " already declared in class " + this.currentClass);
       }
        
-      cinfo.class_methods.put(funName, new FunInfo(return_type, false));          //Needs extra code for virtual
+      cinfo.class_methods.put(funName, new FunInfo(return_type, false));
 
       n.f3.accept(this, sTable);
       n.f4.accept(this, sTable);
@@ -246,7 +254,9 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       return type + " " + id;
    }
 
-   public String visit(NodeToken n, SymbolTable sTable) {    return n.toString(); }
+   public String visit(NodeToken n, SymbolTable sTable) {    
+      return n.toString(); 
+   }
 
 
    /**

@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class SymbolTable {		//structure of each scope's hashmap
@@ -85,7 +86,44 @@ public class SymbolTable {		//structure of each scope's hashmap
 		}
 		return true;	//not overriding any method, no parse errors
 	}
+	public void printOffsets() {
+		HashMap<String, Integer> offsets = new HashMap<String, Integer>();
+		offsets.put("int", 4);
+		offsets.put("boolean", 1);
+		offsets.put("int[]", 8);
+		offsets.put("boolean[]", 8);
+		Integer currentNumVars = 0;
+		Integer currentNumMethods = 0;
+		Integer offset = 0;
+		for (String ClassStr : hmap.keySet() ) {
+			
+			ClassInfo cinfo = hmap.get(ClassStr);
+			if (cinfo.isMain)
+				continue; 
+			System.out.println("-----------Class " + ClassStr + "-----------" );
+			System.out.println("---Variables---");
+			for (String VarStr : cinfo.class_vars.keySet()) {
 
+				String type = cinfo.class_vars.get(VarStr);
+				offset = currentNumVars;
+				System.out.println(ClassStr + "." + VarStr + " : " + currentNumVars);
+				currentNumVars = currentNumVars + offsets.get(type);
+
+			}
+			System.out.println("Class methods: ");
+			for (String MethodStr : cinfo.class_methods.keySet()) {
+
+				FunInfo funinfo = cinfo.class_methods.get(MethodStr);
+				String rettype = funinfo.return_type;
+				System.out.print(rettype + " " + MethodStr + " " + "( ");
+				for (String ParamStr : funinfo.arg_types.keySet()) {
+					String type = funinfo.arg_types.get(ParamStr);
+					System.out.print(type + " " + ParamStr + " ");
+				}
+				System.out.println(")");
+			}
+		}
+	}
 	public void printSTable() {
 
 		for (String ClassStr : hmap.keySet() ) {
@@ -109,6 +147,10 @@ public class SymbolTable {		//structure of each scope's hashmap
 					System.out.print(type + " " + ParamStr + " ");
 				}
 				System.out.println(")");
+				System.out.println("Method Variables: ");
+				for (String var : funinfo.fun_vars.keySet()) {
+					System.out.println(funinfo.fun_vars.get(var) + " " + var);
+				}
 			}
 		}
 	}
