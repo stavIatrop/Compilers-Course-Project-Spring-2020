@@ -1,7 +1,6 @@
 import syntaxtree.*;
 import visitor.*;
 import java.io.*;
-import parse_error.*;
 
 public class Main {
     public static void main (String [] args){
@@ -24,7 +23,7 @@ public class Main {
             root.accept(first, sTable);
 
         }
-        catch (ParseError err) {
+        catch (Exception err) {
             System.out.println("Parse Error: " + err.getMessage());
             return;
         }

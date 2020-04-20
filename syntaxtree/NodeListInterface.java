@@ -14,9 +14,9 @@ public interface NodeListInterface extends Node {
    public java.util.Enumeration<Node> elements();
    public int size();
 
-   public void accept(visitor.Visitor v);
-   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu);
-   public <R> R accept(visitor.GJNoArguVisitor<R> v);
-   public <A> void accept(visitor.GJVoidVisitor<A> v, A argu);
+   public void accept(visitor.Visitor v) throws Exception;
+   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) throws Exception;
+   public <R> R accept(visitor.GJNoArguVisitor<R> v) throws Exception;
+   public <A> void accept(visitor.GJVoidVisitor<A> v, A argu) throws Exception;
 }
 

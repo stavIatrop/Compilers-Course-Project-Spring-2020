@@ -27,16 +27,16 @@ public class NodeListOptional implements NodeListInterface {
    public Node elementAt(int i)  { return nodes.elementAt(i); }
    public int size()             { return nodes.size(); }
    public boolean present()      { return nodes.size() != 0; }
-   public void accept(visitor.Visitor v) {
+   public void accept(visitor.Visitor v) throws Exception {
       v.visit(this);
    }
-   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) {
+   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) throws Exception {
       return v.visit(this,argu);
    }
-   public <R> R accept(visitor.GJNoArguVisitor<R> v) {
+   public <R> R accept(visitor.GJNoArguVisitor<R> v) throws Exception {
       return v.visit(this);
    }
-   public <A> void accept(visitor.GJVoidVisitor<A> v, A argu) {
+   public <A> void accept(visitor.GJVoidVisitor<A> v, A argu) throws Exception {
       v.visit(this,argu);
    }
 

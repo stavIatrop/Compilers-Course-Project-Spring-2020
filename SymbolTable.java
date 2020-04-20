@@ -17,7 +17,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 			return false;
 		}
 		
-		hmap.put(className, new ClassInfo(parentClass));
+		hmap.put(className, new ClassInfo(parentClass, mainclass));
 		if (parentClass != null) {	//insert child to parent class
 
 			ClassInfo cinfo = hmap.get(parentClass);
@@ -121,13 +121,15 @@ class ClassInfo  {	//structure of a declared class' info
 	LinkedHashMap<String, FunInfo> class_methods;
 	String parentClass;
 	ArrayList<String> children;
+	boolean isMain;
 
-	public ClassInfo(String parent) {
+	public ClassInfo(String parent, boolean ismain) {
 
 		class_vars = new LinkedHashMap<String, String>();
 		class_methods = new LinkedHashMap<String, FunInfo>();
 		children = new ArrayList<String>();
 		parentClass = parent;
+		isMain = ismain;
 	}
 
 }

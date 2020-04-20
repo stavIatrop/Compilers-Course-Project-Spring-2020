@@ -25,7 +25,7 @@ class B extends A {
 
 class C extends B {
 
-	public int fun(int num, boolean x){
+	public int fun(int num, int x){
 		return 0;
 	}
 }

@@ -4,8 +4,6 @@
 
 package syntaxtree;
 
-import parse_error.ParseError;
-
 /**
  * Represents an grammar optional node, e.g. ( A )? or [ A ]
  */
@@ -24,16 +22,16 @@ public class NodeOptional implements Node {
 
       node = n;
    }
-   public void accept(visitor.Visitor v) {
+   public void accept(visitor.Visitor v) throws Exception {
       v.visit(this);
    }
-   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) throws ParseError{
+   public <R,A> R accept(visitor.GJVisitor<R,A> v, A argu) throws Exception {
       return v.visit(this,argu);
    }
-   public <R> R accept(visitor.GJNoArguVisitor<R> v) {
+   public <R> R accept(visitor.GJNoArguVisitor<R> v) throws Exception {
       return v.visit(this);
    }
-   public <A> void accept(visitor.GJVoidVisitor<A> v, A argu) {
+   public <A> void accept(visitor.GJVoidVisitor<A> v, A argu) throws Exception {
       v.visit(this,argu);
    }
    public boolean present()   { return node != null; }
