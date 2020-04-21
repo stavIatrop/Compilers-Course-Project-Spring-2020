@@ -181,8 +181,6 @@ class ClassInfo  {	//structure of a declared class' info
 	String parentClass;
 	ArrayList<String> children;
 	boolean isMain;
-	Integer VarEndOffset;
-	Integer MethodEndOffset;
 
 	public ClassInfo(String parent, boolean ismain) {
 
