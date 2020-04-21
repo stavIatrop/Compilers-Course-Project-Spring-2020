@@ -12,6 +12,8 @@ class A {
 	public int fun(int num, boolean x) {
 		int num_aux;
 		A obj;
+		num = false;
+		num_aux = 2;
 		return 2;
 	}
 }

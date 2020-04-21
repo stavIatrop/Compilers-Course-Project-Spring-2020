@@ -28,6 +28,15 @@ public class Main {
             return;
         }
         sTable.printOffsets();
+        SecondPhaseVisitor second = new SecondPhaseVisitor();
+        try {
+            root.accept(second, sTable);
+
+        }
+        catch (Exception err) {
+            System.out.println("Parse Error: " + err.getMessage());
+            return;
+        }
         ///////////////////////////////////////////////
     }
     catch(ParseException ex){
