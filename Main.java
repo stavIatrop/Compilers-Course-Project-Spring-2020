@@ -27,6 +27,7 @@ public class Main {
             System.out.println("Parse Error: " + err.getMessage());
             return;
         }
+        sTable.printSTable();
         sTable.printOffsets();
         SecondPhaseVisitor second = new SecondPhaseVisitor();
         try {

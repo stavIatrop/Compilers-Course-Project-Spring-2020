@@ -101,12 +101,47 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f0.accept(this, sTable);
         n.f1.accept(this, sTable);
         this.expectedType = "boolean";
-        //STOPPED HERE
         n.f2.accept(this, sTable);
         n.f3.accept(this, sTable);
         n.f4.accept(this, sTable);
         n.f5.accept(this, sTable);
         n.f6.accept(this, sTable);
+        return _ret;
+    }
+
+    /**
+    * f0 -> "while"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> Statement()
+    */
+    public String visit(WhileStatement n, SymbolTable sTable) throws Exception {
+        String _ret=null;
+        n.f0.accept(this, sTable);
+        n.f1.accept(this, sTable);
+        this.expectedType = "boolean";
+        n.f2.accept(this, sTable);
+        n.f3.accept(this, sTable);
+        n.f4.accept(this, sTable);
+        return _ret;
+    }
+
+    /**
+    * f0 -> "System.out.println"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> ";"
+    */
+    public String visit(PrintStatement n, SymbolTable sTable) throws Exception {
+        String _ret=null;
+        n.f0.accept(this, sTable);
+        n.f1.accept(this, sTable);
+        this.expectedType = "int";
+        n.f2.accept(this, sTable);
+        n.f3.accept(this, sTable);
+        n.f4.accept(this, sTable);
         return _ret;
     }
 
@@ -126,8 +161,36 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         name = n.f0.accept(this, sTable);
         ClassInfo cInfo = sTable.hmap.get(this.currentClass);
         FunInfo funInfo = cInfo.class_methods.get(this.currentMethod);
-        if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name)) {
-            throw new Exception(name + " cannot be resolved to a variable.");
+        ClassInfo parent;           //parent declaration outside if scope for later use if needed
+        boolean flag = false;
+
+        if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name) && !cInfo.class_vars.containsKey(name)) {
+            
+            boolean ancestors;
+            if (cInfo.parentClass != null) {
+                ancestors = true;
+                parent = sTable.hmap.get(cInfo.parentClass);  //search for variable in ancestors
+            }else {
+                ancestors = false;
+                parent = null;
+            }
+            while (ancestors) {
+
+                if (parent.class_vars.containsKey(name)) {
+                    flag = true;
+                    break;
+                }
+                if (parent.parentClass != null) {
+                    parent = sTable.hmap.get(parent.parentClass);
+                } else {
+                    ancestors = false;
+                }
+            }
+            if (flag == false) {
+                throw new Exception("Array variable " + name + " cannot be resolved to a variable.");
+            }
+        } else {
+            parent = null;
         }
         
         n.f1.accept(this, sTable);
@@ -135,13 +198,27 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f2.accept(this, sTable);
         n.f3.accept(this, sTable);
         n.f4.accept(this, sTable);
-        if (funInfo.fun_vars.containsKey(name)) {
-            String type = funInfo.fun_vars.get(name);
-            this.expectedType = type;
-        }else if (funInfo.arg_types.containsKey(name)) {
-            String type = funInfo.arg_types.get(name);
-            this.expectedType = type;
+        String type = "null";
+
+        if (flag == true) {         //it means that variable found on an ancestor's scope
+            type = parent.class_vars.get(name);
+            
+        }else { 
+
+            if (funInfo.fun_vars.containsKey(name)) {       //first check method's scope
+                type = funInfo.fun_vars.get(name);
+                
+            }else if (funInfo.arg_types.containsKey(name)) {
+                type = funInfo.arg_types.get(name);
+                
+            } else if (cInfo.class_vars.containsKey(name)) {     //then class' and its ancestors' scopes
+                type = cInfo.class_vars.get(name);
+                    
+            }
         }
+        this.expectedType = type.substring(0, type.length() - 2);
+
+        
         n.f5.accept(this, sTable);
         n.f6.accept(this, sTable);
         return _ret;
@@ -159,16 +236,57 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     name = n.f0.accept(this, sTable);
     ClassInfo cInfo = sTable.hmap.get(this.currentClass);
     FunInfo funInfo = cInfo.class_methods.get(this.currentMethod);
-    if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name)) {
-        throw new Exception(name + " cannot be resolved to a variable.");
+    ClassInfo parent;           //parent declaration outside if scope for later use if needed
+    boolean flag = false;
+
+    if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name) && !cInfo.class_vars.containsKey(name)) {
+        
+        boolean ancestors;
+        if (cInfo.parentClass != null) {
+            ancestors = true;
+            parent = sTable.hmap.get(cInfo.parentClass);  //search for variable in ancestors
+        }else {
+            ancestors = false;
+            parent = null;
+        }
+        while (ancestors) {
+
+            if (parent.class_vars.containsKey(name)) {
+                flag = true;
+                break;
+            }
+            if (parent.parentClass != null) {
+                parent = sTable.hmap.get(parent.parentClass);
+            } else {
+                ancestors = false;
+            }
+        }
+        if (flag == false) {
+            throw new Exception("Variable " + name + " cannot be resolved to a variable.");
+        }
+    } else {
+        parent = null;
     }
-    if (funInfo.fun_vars.containsKey(name)) {
-        String type = funInfo.fun_vars.get(name);
-        this.expectedType = type;
-    }else if (funInfo.arg_types.containsKey(name)) {
-        String type = funInfo.arg_types.get(name);
-        this.expectedType = type;
+    
+    String type = "null";
+
+    if (flag == true) {         //it means that variable found on an ancestor's scope
+        type = parent.class_vars.get(name);
+        
+    }else { 
+
+        if (funInfo.fun_vars.containsKey(name)) {       //first check method's scope
+            type = funInfo.fun_vars.get(name);
+            
+        }else if (funInfo.arg_types.containsKey(name)) {
+            type = funInfo.arg_types.get(name);
+            
+        } else if (cInfo.class_vars.containsKey(name)) {     //then class' and its ancestors' scopes
+            type = cInfo.class_vars.get(name);
+                
+        }
     }
+    this.expectedType = type;
 
     n.f1.accept(this, sTable);
     n.f2.accept(this, sTable);
@@ -192,21 +310,20 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         return _ret;
      }
 
-    /**
-    * f0 -> IntegerLiteral()
-    *       | TrueLiteral()
-    *       | FalseLiteral()
-    *       | Identifier()
-    *       | ThisExpression()
-    *       | ArrayAllocationExpression()
-    *       | AllocationExpression()
-    *       | BracketExpression()
-    */
-    public String visit(PrimaryExpression n, SymbolTable sTable) throws Exception {
-        
-        System.out.println(n.f0.accept(this, sTable));
-        return null;
-    }
+    // /**
+    // * f0 -> IntegerLiteral()
+    // *       | TrueLiteral()
+    // *       | FalseLiteral()
+    // *       | Identifier()
+    // *       | ThisExpression()
+    // *       | ArrayAllocationExpression()
+    // *       | AllocationExpression()
+    // *       | BracketExpression()
+    // */
+    // public String visit(PrimaryExpression n, SymbolTable sTable) throws Exception {
+
+    //     return n.f0.accept(this, sTable);
+    // }
      
      
     public String visit(NodeToken n, SymbolTable sTable) {    
