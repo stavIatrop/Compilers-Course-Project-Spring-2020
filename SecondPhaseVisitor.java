@@ -343,8 +343,8 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     *       | Clause()
     */
     public String visit(Expression n, SymbolTable sTable) throws Exception {
-        String s = n.f0.accept(this, sTable);
-        return s;
+        //String s = n.f0.accept(this, sTable);
+        return n.f0.accept(this, sTable);
     }
     /**
     * f0 -> PrimaryExpression()
@@ -353,9 +353,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(PlusExpression n, SymbolTable sTable) throws Exception {
        
-        n.f0.accept(this, sTable);
+        String type1, type2;
+        type1 = n.f0.accept(this, sTable);
         n.f1.accept(this, sTable);
-        n.f2.accept(this, sTable);
+        type2 = n.f2.accept(this, sTable);
+        if (type1 != "int" || type2 != "int") {
+            throw new Exception("The operator + is undefined for the argument type(s) " + type1 + ", " + type2);
+        }
         return "int";
     }
 
@@ -366,9 +370,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(MinusExpression n, SymbolTable sTable) throws Exception {
 
-        n.f0.accept(this, sTable);
+        String type1, type2;
+        type1 = n.f0.accept(this, sTable);
         n.f1.accept(this, sTable);
-        n.f2.accept(this, sTable);
+        type2 = n.f2.accept(this, sTable);
+        if (type1 != "int" || type2 != "int") {
+            throw new Exception("The operator - is undefined for the argument type(s) " + type1 + ", " + type2);
+        }
         return "int";
     }
 
@@ -379,9 +387,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(TimesExpression n, SymbolTable sTable) throws Exception {
 
-        n.f0.accept(this, sTable);
+        String type1, type2;
+        type1 = n.f0.accept(this, sTable);
         n.f1.accept(this, sTable);
-        n.f2.accept(this, sTable);
+        type2 = n.f2.accept(this, sTable);
+        if (type1 != "int" || type2 != "int") {
+            throw new Exception("The operator * is undefined for the argument type(s) " + type1 + ", " + type2);
+        }
         return "int";
     }
     
@@ -394,9 +406,35 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(ArrayLookup n, SymbolTable sTable) throws Exception {
         
-        n.f0.accept(this, sTable);
+        String PriType;
+        PriType = n.f0.accept(this, sTable);
+        if (PriType == "int") {
+            throw new Exception("The type of the expression must be an array type but it resolved to int");
+        }
+        if (PriType == "boolean") {
+            throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        }
+        if (PriType == "int[]" || PriType == "boolean[]") {
+            throw new Exception("Only single dimension arrays are permitted.");
+        }
+        if (PriType.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+            throw new Exception("Only boolean or int arrays are permitted, not " + PriType.substring(0, PriType.length() - 2) + " object arrays.");
+        }
+        if (PriType == "this") {
+            throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        }
+
+        ClassInfo cinfo;
+        cinfo = sTable.hmap.get(this.currentClass);
+        FunInfo funInfo = cinfo.class_methods.get(this.currentMethod);  //search the identifier PriType to current method's scope
+
+        
         n.f1.accept(this, sTable);
-        n.f2.accept(this, sTable);
+        String ExpType;
+        ExpType = n.f2.accept(this, sTable);
+        if (ExpType != "int") {
+            throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int in integer array allocation.");
+        }
         n.f3.accept(this, sTable);
         return null;
     }
@@ -461,7 +499,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(ThisExpression n, SymbolTable sTable) throws Exception {
         
-        return this.currentClass;
+        return "this";
     }
 
     /**
@@ -523,7 +561,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         }
         n.f2.accept(this, sTable);
         n.f3.accept(this, sTable);
-        return className;
+        return className + "()";
     }
 
     /**
