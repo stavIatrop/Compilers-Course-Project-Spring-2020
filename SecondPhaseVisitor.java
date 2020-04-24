@@ -638,20 +638,45 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         if (fInfo == null) {
             throw new Exception("The method " + methodName + " is undefined for the type " + className);
         }
-        this.methodParams = new ArrayList<String>();
-        this.methodCall = methodName;
-        System.out.println(this.methodCall);
-        for (String type : fInfo.arg_types.values()) {
-            this.methodParams.add(type);
-        }
-        this.itr = this.methodParams.iterator();
+        ArrayList<String> methodParams = new ArrayList<String>();
+        
+        methodParams.addAll(fInfo.arg_types.values());
+        
         n.f3.accept(this, sTable);
-        n.f4.accept(this, sTable);
-        if (this.itr.hasNext()) {
-            throw new Exception("The method " + methodName + " is not applicable for the arguments (too few arguments)");
+        String args;
+        args = n.f4.accept(this, sTable);
+        if (args == null) {
+            if(methodParams.size() != 0) {
+                throw new Exception("The method " + methodName + " is not applicable for the arguments (too few arguments)");
+            }
+        }else {
+
+            ArrayList<String> expList = new ArrayList<String>();
+            int j = 0;
+            if (args.contains(",")) {
+                int i;
+                for (i = 0; i < args.length(); i++) {
+                    if (args.charAt(i) == ',') {
+                        String sub;
+                        sub = args.substring(j, i);
+                        j = i + 1;
+                        expList.add(sub);
+                    }
+                }
+                String sub;
+                sub = args.substring(j, i);
+                expList.add(sub);
+            }else {
+                expList.add(args);
+            }    
+            if (!expList.equals(methodParams) ) {
+                throw new Exception("The method " + methodName + " is not applicable for the arguments (too few arguments)");  
+            }
         }
+        
         n.f5.accept(this, sTable);
-        return fInfo.return_type;
+        String return_type = fInfo.return_type;
+        return return_type;
     }
 
 
@@ -661,19 +686,25 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(ExpressionList n, SymbolTable sTable) throws Exception {
         String expType;
-        String correctType;
+        //String correctType;
         expType = n.f0.accept(this, sTable);
-        System.out.println(expType);
-        if (this.itr.hasNext()) {
-            correctType = (String)this.itr.next();
-        } else {
-            throw new Exception("The method " + this.methodCall + " is not applicable for the argument ()");
+        // if (this.itr.hasNext()) {
+        //     correctType = (String)this.itr.next();
+        // } else {
+        //     throw new Exception("The method " + this.methodCall + " is not applicable for the argument ()");
+        // }
+        // if (expType != correctType) {
+        //     throw new Exception("The method " + this.methodCall + " is not applicable for the argument (" + expType + ")" );
+        // }
+        String rest;
+        rest = n.f1.accept(this, sTable);
+        
+        if (rest == null) {
+            return expType;
+        }else {
+            return expType + rest ;
+
         }
-        if (expType != correctType) {
-            throw new Exception("The method " + this.methodCall + " is not applicable for the argument (" + expType + ")" );
-        }
-        n.f1.accept(this, sTable);
-        return null;
     }
 
     /**
@@ -682,19 +713,18 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(ExpressionTerm n, SymbolTable sTable) throws Exception {
         String expType;
-        String correctType;
+        //String correctType;
         n.f0.accept(this, sTable);
         expType = n.f1.accept(this, sTable);
-        if( this.itr.hasNext()) {
-            correctType = (String)this.itr.next();
-        } else {
-            throw new Exception("The method " + this.methodCall + " is not applicable for the arguments (too many arguments)");
-        }
-        if (expType != correctType) {
-            throw new Exception("The method " + this.methodCall + " is not applicable for the arguments");
-        }
-        System.out.println(", " + expType);
-        return expType;
+        // if( this.itr.hasNext()) {
+        //     correctType = (String)this.itr.next();
+        // } else {
+        //     throw new Exception("The method " + this.methodCall + " is not applicable for the arguments (too many arguments)");
+        // }
+        // if (expType != correctType) {
+        //     throw new Exception("The method " + this.methodCall + " is not applicable for the arguments");
+        // }
+        return "," + expType;
     }
     
 
