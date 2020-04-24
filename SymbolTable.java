@@ -86,6 +86,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 		}
 		return true;	//not overriding any method, no parse errors
 	}
+
 	public void printOffsets() {
 		HashMap<String, Integer> offsets = new HashMap<String, Integer>();
 		offsets.put("int", 4);
@@ -171,6 +172,109 @@ public class SymbolTable {		//structure of each scope's hashmap
 			}
 		}
 	}
+	
+	public boolean checkClass(String className) {
+		
+		if (hmap.containsKey(className)) {
+			return true;
+		}
+		return false;
+	}
+
+	public FunInfo lookupMethod(String className, String methodName) {
+
+		ClassInfo cInfo = hmap.get(className);
+		FunInfo fInfo;
+		if (cInfo.class_methods.containsKey(methodName)) {
+			fInfo = cInfo.class_methods.get(methodName);
+			return fInfo;
+		}
+		//maybe it is a method from an ancestor
+		boolean ancestors;
+        ClassInfo parent;
+
+		if (cInfo.parentClass != null) {
+			ancestors = true;
+			parent = hmap.get(cInfo.parentClass);  //search for method in ancestors
+		}else {
+			ancestors = false;
+			parent = null;
+		}
+		while(ancestors) {
+
+			if (parent.class_methods.containsKey(methodName)){
+				fInfo = parent.class_methods.get(methodName);
+				return fInfo;
+			}
+			if (parent.parentClass != null) {
+				parent = hmap.get(parent.parentClass);
+			} else {
+				ancestors = false;
+			}
+		}
+		return null;
+	}
+
+	
+	public String lookupName(String className, String methodName, String idName) {
+
+		ClassInfo cInfo;
+        cInfo = hmap.get(className);
+        FunInfo funInfo = cInfo.class_methods.get(methodName);  //search the identifier idName to current method's scope
+
+        ClassInfo parent;           //parent declaration outside if scope for later use is needed
+        boolean flag = false;
+
+        if (!funInfo.fun_vars.containsKey(idName) && !funInfo.arg_types.containsKey(idName) && !cInfo.class_vars.containsKey(idName)) {
+            
+            boolean ancestors;
+            if (cInfo.parentClass != null) {
+                ancestors = true;
+                parent = hmap.get(cInfo.parentClass);  //search for variable in ancestors
+            }else {
+                ancestors = false;
+                parent = null;
+            }
+            while (ancestors) {
+
+                if (parent.class_vars.containsKey(idName)) {
+                    flag = true;
+                    break;
+                }
+                if (parent.parentClass != null) {
+                    parent = hmap.get(parent.parentClass);
+                } else {
+                    ancestors = false;
+                }
+            }
+            if (flag == false) {
+				return null;
+            }
+        } else {
+            parent = null;
+        }
+        
+        String type = "null";
+
+        if (flag == true) {         //it means that variable found on an ancestor's scope
+            type = parent.class_vars.get(idName);
+            
+        }else { 
+
+            if (funInfo.fun_vars.containsKey(idName)) {       //first check method's scope
+                type = funInfo.fun_vars.get(idName);
+                
+            }else if (funInfo.arg_types.containsKey(idName)) {
+                type = funInfo.arg_types.get(idName);
+                
+            } else if (cInfo.class_vars.containsKey(idName)) {     //then class' and its ancestors' scopes
+                type = cInfo.class_vars.get(idName);
+                    
+            }
+		}
+		return type;
+
+	}
 
 }
 
@@ -194,17 +298,6 @@ class ClassInfo  {	//structure of a declared class' info
 
 }
 
-// class VarInfo {		//structure of a declared variable's info
-	
-// 	String type;	//int or boolean
-// 	String value;	//might not be needed
-
-// 	public VarInfo( String tp, String val) {
-// 		type = tp;
-// 		value = val;
-// 	}
-
-// }
 
 class FunInfo  {		//structure of a declared function's info
 

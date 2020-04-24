@@ -1,10 +1,19 @@
 import visitor.GJDepthFirst;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import syntaxtree.*;
 
 public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
     String currentClass;
     String currentMethod;
+    String currExp;
+    boolean primaryExp;
+    ArrayList<String> methodParams;
+    Iterator itr;
+    String methodCall;
 
    /**
     * f0 -> "class"
@@ -149,6 +158,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         }
         n.f3.accept(this, sTable);
         n.f4.accept(this, sTable);
+        
         return _ret;
     }
 
@@ -295,11 +305,34 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         
 
         n.f1.accept(this, sTable);
-        System.out.println("name:" + name + " type: " + type );
-        String s = n.f2.accept(this, sTable);
-        System.out.println("EXPR REEA : " +  s);
+        String expType;
+        expType = n.f2.accept(this, sTable);
+        if (expType == "this") {
+            expType = this.currentClass;
+        }
+        if (expType != type) {
+            throw new Exception("Type mismatch: cannot convert from " + expType + " to " + type);
+        }
         n.f3.accept(this, sTable);
         return _ret;
+    }
+
+
+     /**
+    * f0 -> AndExpression()
+    *       | CompareExpression()
+    *       | PlusExpression()
+    *       | MinusExpression()
+    *       | TimesExpression()
+    *       | ArrayLookup()
+    *       | ArrayLength()
+    *       | MessageSend()
+    *       | Clause()
+    */
+    public String visit(Expression n, SymbolTable sTable) throws Exception {
+        //this.currExp = n.f0.accept(this, sTable);
+        //System.out.println(this.currExp + " is currentExp");
+        return n.f0.accept(this, sTable);
     }
 
     /**
@@ -329,23 +362,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
         return "boolean";
     }
-
-
-     /**
-    * f0 -> AndExpression()
-    *       | CompareExpression()
-    *       | PlusExpression()
-    *       | MinusExpression()
-    *       | TimesExpression()
-    *       | ArrayLookup()
-    *       | ArrayLength()
-    *       | MessageSend()
-    *       | Clause()
-    */
-    public String visit(Expression n, SymbolTable sTable) throws Exception {
-        //String s = n.f0.accept(this, sTable);
-        return n.f0.accept(this, sTable);
-    }
     /**
     * f0 -> PrimaryExpression()
     * f1 -> "+"
@@ -355,8 +371,42 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
        
         String type1, type2;
         type1 = n.f0.accept(this, sTable);
+        // if (type1 == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (type1 == "int[]" || type1 == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
+        // if (type1.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+        //     throw new Exception("Only boolean or int arrays are permitted, not " + type1.substring(0, type1.length() - 2) + " object arrays.");
+        // }
+        // if (type1 == "this") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        // }
+        // if (type1 != "int") {
+
+        //     type1 = sTable.lookupName(this.currentClass, this.currentMethod, type1);
+        // }
+
         n.f1.accept(this, sTable);
         type2 = n.f2.accept(this, sTable);
+        // if (type2 == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (type2 == "int[]" || type2 == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
+        // if (type2.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+        //     throw new Exception("Only boolean or int arrays are permitted, not " + type2.substring(0, type2.length() - 2) + " object arrays.");
+        // }
+        // if (type2 == "this") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        // }
+        // if (type2 != "int") {
+
+        //     type2 = sTable.lookupName(this.currentClass, this.currentMethod, type2);
+        // }
+
         if (type1 != "int" || type2 != "int") {
             throw new Exception("The operator + is undefined for the argument type(s) " + type1 + ", " + type2);
         }
@@ -372,8 +422,42 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
         String type1, type2;
         type1 = n.f0.accept(this, sTable);
+        // if (type1 == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (type1 == "int[]" || type1 == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
+        // if (type1.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+        //     throw new Exception("Only boolean or int arrays are permitted, not " + type1.substring(0, type1.length() - 2) + " object arrays.");
+        // }
+        // if (type1 == "this") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        // }
+        // if (type1 != "int") {
+
+        //     type1 = sTable.lookupName(this.currentClass, this.currentMethod, type1);
+        // }
+        
         n.f1.accept(this, sTable);
         type2 = n.f2.accept(this, sTable);
+        // if (type2 == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (type2 == "int[]" || type2 == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
+        // if (type2.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+        //     throw new Exception("Only boolean or int arrays are permitted, not " + type2.substring(0, type2.length() - 2) + " object arrays.");
+        // }
+        // if (type2 == "this") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        // }
+        // if (type2 != "int") {
+
+        //     type2 = sTable.lookupName(this.currentClass, this.currentMethod, type2);
+        // }
+
         if (type1 != "int" || type2 != "int") {
             throw new Exception("The operator - is undefined for the argument type(s) " + type1 + ", " + type2);
         }
@@ -389,8 +473,42 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
         String type1, type2;
         type1 = n.f0.accept(this, sTable);
+        // if (type1 == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (type1 == "int[]" || type1 == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
+        // if (type1.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+        //     throw new Exception("Only boolean or int arrays are permitted, not " + type1.substring(0, type1.length() - 2) + " object arrays.");
+        // }
+        // if (type1 == "this") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        // }
+        // if (type1 != "int") {
+
+        //     type1 = sTable.lookupName(this.currentClass, this.currentMethod, type1);
+        // }
+        
         n.f1.accept(this, sTable);
         type2 = n.f2.accept(this, sTable);
+        // if (type2 == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (type2 == "int[]" || type2 == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
+        // if (type2.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+        //     throw new Exception("Only boolean or int arrays are permitted, not " + type2.substring(0, type2.length() - 2) + " object arrays.");
+        // }
+        // if (type2 == "this") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        // }
+        // if (type2 != "int") {
+
+        //     type2 = sTable.lookupName(this.currentClass, this.currentMethod, type2);
+        // }
+
         if (type1 != "int" || type2 != "int") {
             throw new Exception("The operator * is undefined for the argument type(s) " + type1 + ", " + type2);
         }
@@ -408,35 +526,51 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         
         String PriType;
         PriType = n.f0.accept(this, sTable);
-        if (PriType == "int") {
-            throw new Exception("The type of the expression must be an array type but it resolved to int");
-        }
-        if (PriType == "boolean") {
-            throw new Exception("The type of the expression must be an array type but it resolved to boolean");
-        }
-        if (PriType == "int[]" || PriType == "boolean[]") {
-            throw new Exception("Only single dimension arrays are permitted.");
-        }
-        if (PriType.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
-            throw new Exception("Only boolean or int arrays are permitted, not " + PriType.substring(0, PriType.length() - 2) + " object arrays.");
+        if (PriType == "int" || PriType == "boolean") {
+            throw new Exception("The type of the expression must be an array type but it resolved to " + PriType);
         }
         if (PriType == "this") {
             throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
         }
-
-        ClassInfo cinfo;
-        cinfo = sTable.hmap.get(this.currentClass);
-        FunInfo funInfo = cinfo.class_methods.get(this.currentMethod);  //search the identifier PriType to current method's scope
-
+        // if (PriType == "int[]" || PriType == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
+        // if (PriType.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+        //     throw new Exception("Only boolean or int arrays are permitted, not " + PriType.substring(0, PriType.length() - 2) + " object arrays.");
+        // }
         
+
         n.f1.accept(this, sTable);
         String ExpType;
         ExpType = n.f2.accept(this, sTable);
+
+        // if (ExpType == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (ExpType == "int[]" || ExpType == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
+        // if (ExpType.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
+        //     throw new Exception("Only boolean or int arrays are permitted, not " + ExpType.substring(0, ExpType.length() - 2) + " object arrays.");
+        // }
+        // if (ExpType == "this") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        // }
+        // if (ExpType != "int") {
+        //     ExpType = sTable.lookupName(this.currentClass, this.currentMethod, ExpType);
+        // }
+
         if (ExpType != "int") {
-            throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int in integer array allocation.");
+            throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int.");
         }
         n.f3.accept(this, sTable);
-        return null;
+        String _ret = null;
+        if (PriType == "int[]")
+            _ret = "int";
+        else if (PriType == "boolean[]") {
+            _ret = "boolean";
+        }
+        return _ret;
     }
 
 
@@ -447,12 +581,121 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(ArrayLength n, SymbolTable sTable) throws Exception {
 
-        n.f0.accept(this, sTable);
+        String PriType;
+        PriType = n.f0.accept(this, sTable);
+        if (PriType == "int" || PriType == "boolean") {
+            throw new Exception("The primitive type " + PriType + " does not have a field length");
+        }
+        if (PriType == "this" || (PriType != "int[]" && PriType != "boolean[]") ) {
+            throw new Exception("length cannot be resolved or is not a field");
+        }
+
         n.f1.accept(this, sTable);
         n.f2.accept(this, sTable);
         return "int";
     }
 
+    /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "."
+    * f2 -> Identifier()
+    * f3 -> "("
+    * f4 -> ( ExpressionList() )?
+    * f5 -> ")"
+    */
+    public String visit(MessageSend n, SymbolTable sTable) throws Exception {
+
+        String PriType;
+        PriType = n.f0.accept(this, sTable);
+        
+        n.f1.accept(this, sTable);
+        
+        String methodName;
+        methodName = n.f2.accept(this, sTable);
+        if (PriType == "int" || PriType == "boolean") {
+            throw new Exception("Cannot invoke " + methodName + " on the primitive type " + PriType);
+        }
+        if (PriType == "int[]" || PriType == "boolean[]") {
+            throw new Exception("Cannot invoke " + methodName + " on the array type " + PriType);
+        }
+        String className;
+        if (PriType == "this") {
+            className = this.currentClass;
+        }
+        // else if(PriType.contains("()")) {
+        //     className = PriType.substring(0, PriType.length() - 2);
+        // }
+        else {         //check if class is declared
+
+            if( sTable.checkClass(PriType)) {
+                className = PriType;
+            }else {
+                throw new Exception("Cannot invoke " + methodName + " on the undeclared type " + PriType);
+            }
+        }
+        FunInfo fInfo;
+        fInfo = sTable.lookupMethod(className, methodName);
+        if (fInfo == null) {
+            throw new Exception("The method " + methodName + " is undefined for the type " + className);
+        }
+        this.methodParams = new ArrayList<String>();
+        this.methodCall = methodName;
+        System.out.println(this.methodCall);
+        for (String type : fInfo.arg_types.values()) {
+            this.methodParams.add(type);
+        }
+        this.itr = this.methodParams.iterator();
+        n.f3.accept(this, sTable);
+        n.f4.accept(this, sTable);
+        if (this.itr.hasNext()) {
+            throw new Exception("The method " + methodName + " is not applicable for the arguments (too few arguments)");
+        }
+        n.f5.accept(this, sTable);
+        return fInfo.return_type;
+    }
+
+
+    /**
+    * f0 -> Expression()
+    * f1 -> ExpressionTail()
+    */
+    public String visit(ExpressionList n, SymbolTable sTable) throws Exception {
+        String expType;
+        String correctType;
+        expType = n.f0.accept(this, sTable);
+        System.out.println(expType);
+        if (this.itr.hasNext()) {
+            correctType = (String)this.itr.next();
+        } else {
+            throw new Exception("The method " + this.methodCall + " is not applicable for the argument ()");
+        }
+        if (expType != correctType) {
+            throw new Exception("The method " + this.methodCall + " is not applicable for the argument (" + expType + ")" );
+        }
+        n.f1.accept(this, sTable);
+        return null;
+    }
+
+    /**
+     * f0 -> ","
+    * f1 -> Expression()
+    */
+    public String visit(ExpressionTerm n, SymbolTable sTable) throws Exception {
+        String expType;
+        String correctType;
+        n.f0.accept(this, sTable);
+        expType = n.f1.accept(this, sTable);
+        if( this.itr.hasNext()) {
+            correctType = (String)this.itr.next();
+        } else {
+            throw new Exception("The method " + this.methodCall + " is not applicable for the arguments (too many arguments)");
+        }
+        if (expType != correctType) {
+            throw new Exception("The method " + this.methodCall + " is not applicable for the arguments");
+        }
+        System.out.println(", " + expType);
+        return expType;
+    }
     
 
     /**
@@ -466,12 +709,31 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     *       | BracketExpression()
     */
     public String visit(PrimaryExpression n, SymbolTable sTable) throws Exception {
-
+        this.primaryExp = true;
         String s = n.f0.accept(this, sTable);
-        System.out.println(s);
+        this.primaryExp = false;
         return s;
     }
     
+    /**
+    * f0 -> <IDENTIFIER>
+    */
+    public String visit(Identifier n, SymbolTable sTable) throws Exception {
+        String id;
+        id = n.f0.accept(this, sTable);
+        if (this.primaryExp == true) {
+            String typeId;
+            typeId = sTable.lookupName(this.currentClass, this.currentMethod, id);
+            if (typeId == null) {
+                throw new Exception("Variable " + id + " cannot be resolved to a variable.");
+    
+            }
+            
+            return typeId;
+        }
+        return id;
+    }
+
     /**
     * f0 -> <INTEGER_LITERAL>
     */
@@ -516,6 +778,17 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f2.accept(this, sTable);
         String ExpType;
         ExpType = n.f3.accept(this, sTable);
+        if (ExpType == "boolean") {
+            throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        }
+        if (ExpType == "int[]" || ExpType == "boolean[]") {
+            throw new Exception("Only single dimension arrays are permitted.");
+        }
+
+        // if (ExpType != "int") {
+        //     ExpType = sTable.lookupName(this.currentClass, this.currentMethod, ExpType);            
+        // }
+
         if (ExpType != "int") {
             throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int in boolean array allocation.");
         }
@@ -537,6 +810,16 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f2.accept(this, sTable);
         String ExpType;
         ExpType = n.f3.accept(this, sTable);
+        if (ExpType == "boolean") {
+            throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        }
+        if (ExpType == "int[]" || ExpType == "boolean[]") {
+            throw new Exception("Only single dimension arrays are permitted.");
+        }
+
+        // if (ExpType != "int") {
+        //     ExpType = sTable.lookupName(this.currentClass, this.currentMethod, ExpType);            
+        // }
         if (ExpType != "int") {
             throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int in integer array allocation.");
         }
@@ -555,13 +838,14 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
         n.f0.accept(this, sTable);
         String className;
+        this.primaryExp = false;
         className = n.f1.accept(this, sTable);
         if (!sTable.hmap.containsKey(className)) {
             throw new Exception(className + " class allocation cannot be resolved to a type.");
         }
         n.f2.accept(this, sTable);
         n.f3.accept(this, sTable);
-        return className + "()";
+        return className;
     }
 
     /**
