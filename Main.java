@@ -24,7 +24,7 @@ public class Main {
 
         }
         catch (Exception err) {
-            System.out.println("Parse Error: " + err.getMessage());
+            System.out.println("First Visitor: Parse Error: " + err.getMessage());
             return;
         }
         sTable.printSTable();
@@ -35,7 +35,7 @@ public class Main {
 
         }
         catch (Exception err) {
-            System.out.println("Parse Error: " + err.getMessage());
+            System.out.println("Second Visitor: Parse Error: " + err.getMessage());
             return;
         }
         ///////////////////////////////////////////////

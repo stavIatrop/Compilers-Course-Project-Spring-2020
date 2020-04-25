@@ -12,7 +12,53 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     String currExp;
     boolean primaryExp;
     ArrayList<String> methodParams = new ArrayList<String>();
+    boolean classVar;
 
+    /**
+    * f0 -> "class"
+    * f1 -> Identifier()
+    * f2 -> "{"
+    * f3 -> "public"
+    * f4 -> "static"
+    * f5 -> "void"
+    * f6 -> "main"
+    * f7 -> "("
+    * f8 -> "String"
+    * f9 -> "["
+    * f10 -> "]"
+    * f11 -> Identifier()
+    * f12 -> ")"
+    * f13 -> "{"
+    * f14 -> ( VarDeclaration() )*
+    * f15 -> ( Statement() )*
+    * f16 -> "}"
+    * f17 -> "}"
+    */
+    public String visit(MainClass n, SymbolTable sTable) throws Exception {
+        String name;
+        n.f0.accept(this, sTable);
+        name = n.f1.accept(this, sTable);
+        this.currentClass = name;
+        n.f2.accept(this, sTable);
+        n.f3.accept(this, sTable);
+        n.f4.accept(this, sTable);
+        n.f5.accept(this, sTable);
+        n.f6.accept(this, sTable);
+        n.f7.accept(this, sTable);
+        n.f8.accept(this, sTable);
+        n.f9.accept(this, sTable);
+        n.f10.accept(this, sTable);
+        n.f11.accept(this, sTable);
+        n.f12.accept(this, sTable);
+        n.f13.accept(this, sTable);
+        this.classVar = false;
+        this.currentMethod = "main";
+        n.f14.accept(this, sTable);
+        n.f15.accept(this, sTable);
+        n.f16.accept(this, sTable);
+        n.f17.accept(this, sTable);
+        return null;
+    }
    /**
     * f0 -> "class"
     * f1 -> Identifier()
