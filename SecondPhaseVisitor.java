@@ -103,6 +103,25 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     }
 
     /**
+    * f0 -> Type()
+    * f1 -> Identifier()
+    * f2 -> ";"
+    */
+    public String visit(VarDeclaration n, SymbolTable sTable) throws Exception {
+        String type;
+        type = n.f0.accept(this, sTable);
+        if (type != "int" && type != "boolean" && type != "int[]" && type != "boolean[]") {
+
+            if (!sTable.checkClass(type)) {      //if class name is not defined before or after this var declaration
+                throw new Exception(type + " cannot be resolved to a type");
+            }
+        }
+        n.f1.accept(this, sTable);
+        n.f2.accept(this, sTable);
+        return null;
+    }
+
+    /**
     * f0 -> "public"
     * f1 -> Type()
     * f2 -> Identifier()
