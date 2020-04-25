@@ -1,7 +1,7 @@
 class TestExp {
 	public static void main(String[] args) {
 		int j;
-		System.out.println(new A().fun(10));
+		System.out.println(new A().fun(10, true));
 	}
 }
 
@@ -12,7 +12,7 @@ class A {
 	public int fun(int num, boolean x) {
 		int num_aux;
 		A obj;
-		num = false;
+		obj = new B();
 		num_aux = 2;
 		return 2;
 	}

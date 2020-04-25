@@ -182,8 +182,31 @@ public class SymbolTable {		//structure of each scope's hashmap
 	}
 
 	public boolean checkSubtype(String type, String ancestorType) {
+
+		ClassInfo cInfo = hmap.get(type);
+		boolean ancestors;
 		
+		if (cInfo.parentClass == null) {
+			return false;
+		}
+		String parent = cInfo.parentClass;
+		ancestors = true;
+		while (ancestors) {
+			
+			if (parent == ancestorType) {
+				return true;
+			}
+			cInfo = hmap.get(parent);
+			if (cInfo.parentClass == null) {
+				ancestors = false;
+				continue;
+			}
+			parent = cInfo.parentClass;
+		}
+		return false;
 	}
+
+	
 	public FunInfo lookupMethod(String className, String methodName) {
 
 		ClassInfo cInfo = hmap.get(className);

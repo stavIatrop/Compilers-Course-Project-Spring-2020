@@ -381,11 +381,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
                 //ckeck for subtype, if expType has ancestor type, assignment is valid
                 boolean isSubtype = sTable.checkSubtype(expType, type);
                 if (!isSubtype) {
-                    
+                    throw new Exception("Type mismatch: cannot convert from " + expType + " to " + type);
+
                 }
+            }else {
+                throw new Exception("Type mismatch: cannot convert from " + expType + " to " + type);
             }
             
-            throw new Exception("Type mismatch: cannot convert from " + expType + " to " + type);
         }
         n.f3.accept(this, sTable);
         return _ret;
