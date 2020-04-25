@@ -406,8 +406,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     *       | Clause()
     */
     public String visit(Expression n, SymbolTable sTable) throws Exception {
-        //this.currExp = n.f0.accept(this, sTable);
-        //System.out.println(this.currExp + " is currentExp");
         return n.f0.accept(this, sTable);
     }
 
@@ -417,10 +415,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     * f2 -> Clause()
     */
     public String visit(AndExpression n, SymbolTable sTable) throws Exception {
-
-        n.f0.accept(this, sTable);
+        String type1, type2;
+        type1 = n.f0.accept(this, sTable);
         n.f1.accept(this, sTable);
-        n.f2.accept(this, sTable);
+        type2 = n.f2.accept(this, sTable);
+        if (type1 != "boolean" || type2 != "boolean") {
+            throw new Exception("The operator && is undefined for the argument type(s) " + type1 + ", " + type2);
+        }
         return "boolean";
     }
 
@@ -431,11 +432,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     * f2 -> PrimaryExpression()
     */
     public String visit(CompareExpression n, SymbolTable sTable) throws Exception {
-
-        n.f0.accept(this, sTable);
+        String type1, type2;
+        type1 = n.f0.accept(this, sTable);
         n.f1.accept(this, sTable);
-        n.f2.accept(this, sTable);
-
+        type2 = n.f2.accept(this, sTable);
+        if (type1 != "int" || type2 != "int") {
+            throw new Exception("The operator < is undefined for the argument type(s) " + type1 + ", " + type2);
+        }
         return "boolean";
     }
     /**
