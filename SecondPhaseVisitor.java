@@ -11,9 +11,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     String currentMethod;
     String currExp;
     boolean primaryExp;
-    ArrayList<String> methodParams;
-    Iterator itr;
-    String methodCall;
+    ArrayList<String> methodParams = new ArrayList<String>();
 
    /**
     * f0 -> "class"
@@ -76,11 +74,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     public String visit(MethodDeclaration n, SymbolTable sTable) throws Exception {
         String _ret=null;
         n.f0.accept(this, sTable);
-        n.f1.accept(this, sTable);
+        String return_type_correct;
+        return_type_correct = n.f1.accept(this, sTable);
         this.currentMethod = n.f2.accept(this, sTable);
-        ClassInfo cInfo = sTable.hmap.get(this.currentClass);
-        FunInfo funInfo = cInfo.class_methods.get(this.currentMethod);
-        String return_type = funInfo.return_type;
         n.f3.accept(this, sTable);
         n.f4.accept(this, sTable);
         n.f5.accept(this, sTable);
@@ -88,7 +84,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f7.accept(this, sTable);
         n.f8.accept(this, sTable);
         n.f9.accept(this, sTable);
-        n.f10.accept(this, sTable);
+        String expType;
+        expType = n.f10.accept(this, sTable);
+        if ( expType != return_type_correct) {
+            throw new Exception("Type mismatch: cannot convert from " + expType + " to " + return_type_correct +
+                             " in return statement of " + this.currentMethod + " method of class " + this.currentClass);
+        }
         n.f11.accept(this, sTable);
         n.f12.accept(this, sTable);
         return _ret;
@@ -638,15 +639,19 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         if (fInfo == null) {
             throw new Exception("The method " + methodName + " is undefined for the type " + className);
         }
-        ArrayList<String> methodParams = new ArrayList<String>();
+        ArrayList<String> methodPams = new ArrayList<String>();
         
-        methodParams.addAll(fInfo.arg_types.values());
-        
+        methodPams.addAll(fInfo.arg_types.values());
+        System.out.println("args: " + fInfo.arg_types.values());
+        System.out.println("methodName: " + methodName);
+        System.out.println("methodPams: " + methodPams);
+
         n.f3.accept(this, sTable);
         String args;
         args = n.f4.accept(this, sTable);
+        System.out.println(args);
         if (args == null) {
-            if(methodParams.size() != 0) {
+            if(methodPams.size() != 0) {
                 throw new Exception("The method " + methodName + " is not applicable for the arguments (too few arguments)");
             }
         }else {
@@ -668,9 +673,10 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
                 expList.add(sub);
             }else {
                 expList.add(args);
-            }    
-            if (!expList.equals(methodParams) ) {
-                throw new Exception("The method " + methodName + " is not applicable for the arguments (too few arguments)");  
+            }
+            System.out.println("expList: "+expList); 
+            if (!expList.equals(methodPams) ) {
+                throw new Exception("The method " + methodName + " is not applicable for the arguments");  
             }
         }
         
@@ -686,25 +692,18 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(ExpressionList n, SymbolTable sTable) throws Exception {
         String expType;
-        //String correctType;
+        this.methodParams.add("");
         expType = n.f0.accept(this, sTable);
-        // if (this.itr.hasNext()) {
-        //     correctType = (String)this.itr.next();
-        // } else {
-        //     throw new Exception("The method " + this.methodCall + " is not applicable for the argument ()");
-        // }
-        // if (expType != correctType) {
-        //     throw new Exception("The method " + this.methodCall + " is not applicable for the argument (" + expType + ")" );
-        // }
-        String rest;
-        rest = n.f1.accept(this, sTable);
+        int lastIndex = this.methodParams.size() - 1;
+        this.methodParams.set(lastIndex, expType);
         
-        if (rest == null) {
-            return expType;
-        }else {
-            return expType + rest ;
+        n.f1.accept(this, sTable);
+        
+        String copy = this.methodParams.get(lastIndex);
+        this.methodParams.remove(lastIndex);
+        return copy;
 
-        }
+        
     }
 
     /**
@@ -713,18 +712,11 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     */
     public String visit(ExpressionTerm n, SymbolTable sTable) throws Exception {
         String expType;
-        //String correctType;
+        int lastIndex = this.methodParams.size() - 1;
         n.f0.accept(this, sTable);
         expType = n.f1.accept(this, sTable);
-        // if( this.itr.hasNext()) {
-        //     correctType = (String)this.itr.next();
-        // } else {
-        //     throw new Exception("The method " + this.methodCall + " is not applicable for the arguments (too many arguments)");
-        // }
-        // if (expType != correctType) {
-        //     throw new Exception("The method " + this.methodCall + " is not applicable for the arguments");
-        // }
-        return "," + expType;
+        this.methodParams.set(lastIndex, this.methodParams.get(lastIndex) + "," + expType);
+        return null;
     }
     
 
