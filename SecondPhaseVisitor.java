@@ -331,7 +331,19 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
                     
             }
         }
-        String expectedType = type.substring(0, type.length() - 2);
+        if (type == "int" || type == "boolean") {
+            throw new Exception("The type of the expression must be an array type but it resolved to " + type + ".");
+        }
+        if (type != "int[]" && type != "boolean[]") {
+            throw new Exception("The type of the expression must be an array type but it resolved to " + type + ".");
+        }
+        String expectedType = "";
+        if (type == "int[]") {
+            expectedType = "int";
+        }else if (type == "boolean[]") {
+            expectedType = "boolean";
+        }
+            
 
         String expType2;
         expType2 = n.f5.accept(this, sTable);
@@ -648,7 +660,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         String PriType;
         PriType = n.f0.accept(this, sTable);
         if (PriType == "int" || PriType == "boolean") {
-            throw new Exception("The type of the expression must be an array type but it resolved to " + PriType);
+            throw new Exception("The type of the expression must be an array type but it resolved to " + PriType + ".");
         }
         if (PriType == "this") {
             throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");

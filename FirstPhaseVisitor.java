@@ -54,7 +54,10 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       n.f8.accept(this, sTable);
       n.f9.accept(this, sTable);
       n.f10.accept(this, sTable);
-      n.f11.accept(this, sTable);
+      String args;
+      args = n.f11.accept(this, sTable);
+      FunInfo mainInfo = cinfo.class_methods.get("main");
+      mainInfo.arg_types.put(args, "String[]");
       n.f12.accept(this, sTable);
       n.f13.accept(this, sTable);
       this.classVar = false;
