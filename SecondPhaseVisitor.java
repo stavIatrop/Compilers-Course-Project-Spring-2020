@@ -151,9 +151,25 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f9.accept(this, sTable);
         String expType;
         expType = n.f10.accept(this, sTable);
+        if (expType == "this") {
+            expType = this.currentClass;
+        }
         if ( expType != return_type_correct) {
-            throw new Exception("Type mismatch: cannot convert from " + expType + " to " + return_type_correct +
+            boolean isClassType1, isClassType2;
+            isClassType1 = expType != "int" && expType != "int[]" && expType != "boolean" && expType != "boolean[]";
+            isClassType2 = return_type_correct != "int" && return_type_correct != "int[]" && return_type_correct != "boolean" && return_type_correct != "boolean[]";
+            if ( isClassType1 && isClassType2) {
+                //ckeck for subtype, if expType has ancestor type, assignment is valid
+                boolean isSubtype = sTable.checkSubtype(expType, return_type_correct);
+                if (!isSubtype) {
+                    throw new Exception("Type mismatch: cannot convert from " + expType + " to " + return_type_correct +
+                                    " in return statement of " + this.currentMethod + " method of class " + this.currentClass);
+
+                }
+            }else {
+                throw new Exception("Type mismatch: cannot convert from " + expType + " to " + return_type_correct +
                              " in return statement of " + this.currentMethod + " method of class " + this.currentClass);
+            }
         }
         n.f11.accept(this, sTable);
         n.f12.accept(this, sTable);
@@ -176,6 +192,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         String ExpType;
         ExpType = n.f2.accept(this, sTable);
         if (ExpType != "boolean") {
+            if (ExpType == "this") {
+                ExpType = this.currentClass;
+            }
             throw new Exception("If statement needs boolean expression not " + ExpType + ".");
         }
         n.f3.accept(this, sTable);
@@ -199,6 +218,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         String ExpType;
         ExpType = n.f2.accept(this, sTable);
         if (ExpType != "boolean") {
+            if (ExpType == "this") {
+                ExpType = this.currentClass;
+            }
             throw new Exception("While statement needs boolean expression not " + ExpType + ".");
         }
         n.f3.accept(this, sTable);
@@ -220,6 +242,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         String ExpType;
         ExpType = n.f2.accept(this, sTable);
         if (ExpType != "int") {
+            if (ExpType == "this") {
+                ExpType = this.currentClass;
+            }
             throw new Exception("Print statement needs int expression not " + ExpType + ".");
         }
         n.f3.accept(this, sTable);
@@ -277,7 +302,15 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         }
         
         n.f1.accept(this, sTable);
-        n.f2.accept(this, sTable);
+
+        String ExpType;
+        ExpType = n.f2.accept(this, sTable);
+        if (ExpType != "int") {
+            if (ExpType == "this") {
+                ExpType = this.currentClass;
+            }
+            throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int.");
+        }
         n.f3.accept(this, sTable);
         n.f4.accept(this, sTable);
         String type = "null";
@@ -300,8 +333,14 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         }
         String expectedType = type.substring(0, type.length() - 2);
 
-        
-        n.f5.accept(this, sTable);
+        String expType2;
+        expType2 = n.f5.accept(this, sTable);
+        if (expType2 != expectedType) {
+            if (expType2 == "this") {
+                expType2 = this.currentClass;
+            }
+            throw new Exception("Type mismatch: cannot convert from " + expType2 + " to " + expectedType);
+        }
         n.f6.accept(this, sTable);
         return _ret;
     }
@@ -377,7 +416,10 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
             expType = this.currentClass;
         }
         if (expType != type) {
-            if (type != "int" && type != "int[]" && type != "boolean" && type != "boolean[]" ) {
+            boolean isClassType1, isClassType2;
+            isClassType1 = expType != "int" && expType != "int[]" && expType != "boolean" && expType != "boolean[]";
+            isClassType2 = type != "int" && type != "int[]" && type != "boolean" && type != "boolean[]";
+            if ( isClassType1 && isClassType2) {
                 //ckeck for subtype, if expType has ancestor type, assignment is valid
                 boolean isSubtype = sTable.checkSubtype(expType, type);
                 if (!isSubtype) {
@@ -752,9 +794,37 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
             }else {
                 expList.add(args);
             }
+            
             System.out.println("expList: "+expList); 
             if (!expList.equals(methodPams) ) {
-                throw new Exception("The method " + methodName + " is not applicable for the arguments");  
+
+                if (expList.size() > methodPams.size()) {
+                    throw new Exception("The method " + methodName + " is not applicable for the arguments " + expList);
+                }else if (expList.size() < methodPams.size()) {
+                    throw new Exception("The method " + methodName + " is not applicable for the arguments " + expList);
+                }
+                //same number of arguments, check for subtypes
+                int i, length;
+                length = expList.size();
+                for (i = 0; i < length; i++) {
+                    String param = methodPams.get(i);
+                    String callArg = expList.get(i);
+                    boolean isClassType1, isClassType2;
+                    isClassType1 = callArg != "int" && callArg != "int[]" && callArg != "boolean" && callArg != "boolean[]";
+                    isClassType2 = param != "int" && param != "int[]" && param != "boolean" && param != "boolean[]"; 
+                    if ( isClassType1 && isClassType2 ) {
+                        boolean isSubtype = sTable.checkSubtype(callArg, param);
+                        if (!isSubtype) {   //if one call argument at least is not a subtype, throw exception
+                            throw new Exception("The method " + methodName + " is not applicable for the arguments " + expList);
+                        }
+                    }else {
+                        if (param != callArg) {
+                            throw new Exception("The method " + methodName + " is not applicable for the arguments " + expList);
+                        }
+                    }
+                }
+
+                //throw new Exception("The method " + methodName + " is not applicable for the arguments " + expList);  
             }
         }
         
@@ -772,6 +842,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         String expType;
         this.methodParams.add("");
         expType = n.f0.accept(this, sTable);
+        if (expType == "this") {
+            expType = this.currentClass;
+        }
         int lastIndex = this.methodParams.size() - 1;
         this.methodParams.set(lastIndex, expType);
         
@@ -793,6 +866,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         int lastIndex = this.methodParams.size() - 1;
         n.f0.accept(this, sTable);
         expType = n.f1.accept(this, sTable);
+        if (expType == "this") {
+            expType = this.currentClass;
+        }
         this.methodParams.set(lastIndex, this.methodParams.get(lastIndex) + "," + expType);
         return null;
     }
@@ -890,6 +966,10 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         // }
 
         if (ExpType != "int") {
+
+            if (ExpType == "this") {
+                ExpType = this.currentClass;
+            }
             throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int in boolean array allocation.");
         }
         n.f4.accept(this, sTable);
@@ -921,6 +1001,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         //     ExpType = sTable.lookupName(this.currentClass, this.currentMethod, ExpType);            
         // }
         if (ExpType != "int") {
+            if (ExpType == "this") {
+                ExpType = this.currentClass;
+            }
             throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int in integer array allocation.");
         }
         n.f4.accept(this, sTable);
