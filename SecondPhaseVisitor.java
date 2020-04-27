@@ -774,14 +774,10 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         ArrayList<String> methodPams = new ArrayList<String>();
         
         methodPams.addAll(fInfo.arg_types.values());
-        System.out.println("args: " + fInfo.arg_types.values());
-        System.out.println("methodName: " + methodName);
-        System.out.println("methodPams: " + methodPams);
 
         n.f3.accept(this, sTable);
         String args;
         args = n.f4.accept(this, sTable);
-        System.out.println(args);
         if (args == null) {
             if(methodPams.size() != 0) {
                 throw new Exception("The method " + methodName + " is not applicable for the arguments (too few arguments)");
@@ -807,7 +803,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
                 expList.add(args);
             }
             
-            System.out.println("expList: "+expList); 
             if (!expList.equals(methodPams) ) {
 
                 if (expList.size() > methodPams.size()) {
@@ -835,8 +830,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
                         }
                     }
                 }
-
-                //throw new Exception("The method " + methodName + " is not applicable for the arguments " + expList);  
             }
         }
         
