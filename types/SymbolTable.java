@@ -1,10 +1,11 @@
+package types;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class SymbolTable {		//structure of each scope's hashmap
 
-	LinkedHashMap<String, ClassInfo> hmap;
+	public LinkedHashMap<String, ClassInfo> hmap;
 
 
 	public SymbolTable() {
@@ -88,13 +89,13 @@ public class SymbolTable {		//structure of each scope's hashmap
 	}
 
 	public void printOffsets() {
-		HashMap<String, Integer> offsets = new HashMap<String, Integer>();
+		LinkedHashMap<String, Integer> offsets = new LinkedHashMap<String, Integer>();
 		offsets.put("int", 4);
 		offsets.put("boolean", 1);
 		offsets.put("int[]", 8);
 		offsets.put("boolean[]", 8);
-		HashMap<String, Integer> offsetVars = new HashMap<String, Integer>();		//keep track of the offset enumeration of variables and methods to each class
-		HashMap<String, Integer> offsetMethods = new HashMap<String, Integer>();
+		LinkedHashMap<String, Integer> offsetVars = new LinkedHashMap<String, Integer>();		//keep track of the offset enumeration of variables and methods to each class
+		LinkedHashMap<String, Integer> offsetMethods = new LinkedHashMap<String, Integer>();
 
 		for (String ClassStr : hmap.keySet() ) {
 			
@@ -302,40 +303,4 @@ public class SymbolTable {		//structure of each scope's hashmap
 
 	}
 
-}
-
-class ClassInfo  {	//structure of a declared class' info
-	
-	LinkedHashMap<String, String> class_vars;
-	LinkedHashMap<String, FunInfo> class_methods;
-	String parentClass;
-	ArrayList<String> children;
-	boolean isMain;
-
-	public ClassInfo(String parent, boolean ismain) {
-
-		class_vars = new LinkedHashMap<String, String>();
-		class_methods = new LinkedHashMap<String, FunInfo>();
-		children = new ArrayList<String>();
-		parentClass = parent;
-		isMain = ismain;
-
-	}
-
-}
-
-
-class FunInfo  {		//structure of a declared function's info
-
-	String return_type;
-	LinkedHashMap<String, String> arg_types;
-	boolean isOverriding;
-	LinkedHashMap<String, String> fun_vars;
-
-	public FunInfo( String rettype, boolean isover) {
-		return_type = rettype;
-		arg_types = new LinkedHashMap<String, String>();
-		isOverriding = isover;
-		fun_vars = new LinkedHashMap<String, String>();
-	}
 }

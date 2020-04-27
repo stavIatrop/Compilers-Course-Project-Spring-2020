@@ -1,5 +1,8 @@
 import syntaxtree.*;
+import types.SymbolTable;
 import visitor.*;
+import my_visitors.*;
+
 import java.io.*;
 
 public class Main {

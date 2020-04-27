@@ -1,9 +1,11 @@
+package my_visitors;
 import visitor.GJDepthFirst;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 import syntaxtree.*;
+import types.*;
 
 public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 

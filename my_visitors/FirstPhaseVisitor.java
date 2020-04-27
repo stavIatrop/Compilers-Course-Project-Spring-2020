@@ -1,5 +1,9 @@
+package my_visitors;
+
 import syntaxtree.*;
+import types.*;
 import visitor.GJDepthFirst;
+
 
 public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 

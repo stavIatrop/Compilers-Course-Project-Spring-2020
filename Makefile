@@ -6,4 +6,4 @@ compile:
 	javac Main.java
 
 clean:
-	rm -f *.class *~
+	rm -f types/*.class my_visitors/*.class *.class *~
