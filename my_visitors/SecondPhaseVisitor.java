@@ -11,10 +11,8 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
     String currentClass;
     String currentMethod;
-    String currExp;
     boolean primaryExp;
     ArrayList<String> methodParams = new ArrayList<String>();
-    boolean classVar;
 
     /**
     * f0 -> "class"
@@ -53,7 +51,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f11.accept(this, sTable);
         n.f12.accept(this, sTable);
         n.f13.accept(this, sTable);
-        this.classVar = false;
         this.currentMethod = "main";
         n.f14.accept(this, sTable);
         n.f15.accept(this, sTable);
@@ -166,7 +163,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
                 if (!isSubtype) {
                     throw new Exception("Type mismatch: cannot convert from " + expType + " to " + return_type_correct +
                                     " in return statement of " + this.currentMethod + " method of class " + this.currentClass);
-
                 }
             }else {
                 throw new Exception("Type mismatch: cannot convert from " + expType + " to " + return_type_correct +
@@ -269,39 +265,43 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         String name;
         
         name = n.f0.accept(this, sTable);
-        ClassInfo cInfo = sTable.hmap.get(this.currentClass);
-        FunInfo funInfo = cInfo.class_methods.get(this.currentMethod);
-        ClassInfo parent;           //parent declaration outside if scope for later use if needed
-        boolean flag = false;
-
-        if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name) && !cInfo.class_vars.containsKey(name)) {
-            
-            boolean ancestors;
-            if (cInfo.parentClass != null) {
-                ancestors = true;
-                parent = sTable.hmap.get(cInfo.parentClass);  //search for variable in ancestors
-            }else {
-                ancestors = false;
-                parent = null;
-            }
-            while (ancestors) {
-
-                if (parent.class_vars.containsKey(name)) {
-                    flag = true;
-                    break;
-                }
-                if (parent.parentClass != null) {
-                    parent = sTable.hmap.get(parent.parentClass);
-                } else {
-                    ancestors = false;
-                }
-            }
-            if (flag == false) {
-                throw new Exception("Array variable " + name + " cannot be resolved to a variable.");
-            }
-        } else {
-            parent = null;
+        String type = sTable.lookupName(this.currentClass, this.currentMethod, name);
+        if (type == null) {
+            throw new Exception("Array variable " + name + " cannot be resolved to a variable.");
         }
+        // ClassInfo cInfo = sTable.hmap.get(this.currentClass);
+        // FunInfo funInfo = cInfo.class_methods.get(this.currentMethod);
+        // ClassInfo parent;           //parent declaration outside if scope for later use if needed
+        // boolean flag = false;
+
+        // if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name) && !cInfo.class_vars.containsKey(name)) {
+            
+        //     boolean ancestors;
+        //     if (cInfo.parentClass != null) {
+        //         ancestors = true;
+        //         parent = sTable.hmap.get(cInfo.parentClass);  //search for variable in ancestors
+        //     }else {
+        //         ancestors = false;
+        //         parent = null;
+        //     }
+        //     while (ancestors) {
+
+        //         if (parent.class_vars.containsKey(name)) {
+        //             flag = true;
+        //             break;
+        //         }
+        //         if (parent.parentClass != null) {
+        //             parent = sTable.hmap.get(parent.parentClass);
+        //         } else {
+        //             ancestors = false;
+        //         }
+        //     }
+        //     if (flag == false) {
+        //         throw new Exception("Array variable " + name + " cannot be resolved to a variable.");
+        //     }
+        // } else {
+        //     parent = null;
+        // }
         
         n.f1.accept(this, sTable);
 
@@ -315,24 +315,25 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         }
         n.f3.accept(this, sTable);
         n.f4.accept(this, sTable);
-        String type = "null";
+        // String type = "null";
 
-        if (flag == true) {         //it means that variable found on an ancestor's scope
-            type = parent.class_vars.get(name);
+        // if (flag == true) {         //it means that variable found on an ancestor's scope
+        //     type = parent.class_vars.get(name);
             
-        }else { 
+        // }else { 
 
-            if (funInfo.fun_vars.containsKey(name)) {       //first check method's scope
-                type = funInfo.fun_vars.get(name);
+        //     if (funInfo.fun_vars.containsKey(name)) {       //first check method's scope
+        //         type = funInfo.fun_vars.get(name);
                 
-            }else if (funInfo.arg_types.containsKey(name)) {
-                type = funInfo.arg_types.get(name);
+        //     }else if (funInfo.arg_types.containsKey(name)) {
+        //         type = funInfo.arg_types.get(name);
                 
-            } else if (cInfo.class_vars.containsKey(name)) {     //then class' and its ancestors' scopes
-                type = cInfo.class_vars.get(name);
+        //     } else if (cInfo.class_vars.containsKey(name)) {     //then class' and its ancestors' scopes
+        //         type = cInfo.class_vars.get(name);
                     
-            }
-        }
+        //     }
+        // }
+
         if (type == "int" || type == "boolean") {
             throw new Exception("The type of the expression must be an array type but it resolved to " + type + ".");
         }
@@ -369,58 +370,63 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         String _ret=null;
         String name;
         name = n.f0.accept(this, sTable);
-        ClassInfo cInfo = sTable.hmap.get(this.currentClass);
-        FunInfo funInfo = cInfo.class_methods.get(this.currentMethod);
-        ClassInfo parent;           //parent declaration outside if scope for later use if needed
-        boolean flag = false;
-
-        if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name) && !cInfo.class_vars.containsKey(name)) {
-            
-            boolean ancestors;
-            if (cInfo.parentClass != null) {
-                ancestors = true;
-                parent = sTable.hmap.get(cInfo.parentClass);  //search for variable in ancestors
-            }else {
-                ancestors = false;
-                parent = null;
-            }
-            while (ancestors) {
-
-                if (parent.class_vars.containsKey(name)) {
-                    flag = true;
-                    break;
-                }
-                if (parent.parentClass != null) {
-                    parent = sTable.hmap.get(parent.parentClass);
-                } else {
-                    ancestors = false;
-                }
-            }
-            if (flag == false) {
-                throw new Exception("Variable " + name + " cannot be resolved to a variable.");
-            }
-        } else {
-            parent = null;
-        }
         
-        String type = "null";
-
-        if (flag == true) {         //it means that variable found on an ancestor's scope
-            type = parent.class_vars.get(name);
-            
-        }else { 
-
-            if (funInfo.fun_vars.containsKey(name)) {       //first check method's scope
-                type = funInfo.fun_vars.get(name);
-                
-            }else if (funInfo.arg_types.containsKey(name)) {
-                type = funInfo.arg_types.get(name);
-                
-            } else if (cInfo.class_vars.containsKey(name)) {     //then class' and its ancestors' scopes
-                type = cInfo.class_vars.get(name);
-                    
-            }
+        String type = sTable.lookupName(this.currentClass, this.currentMethod, name);
+        if (type == null) {
+            throw new Exception("Variable " + name + " cannot be resolved to a variable.");
         }
+        // ClassInfo cInfo = sTable.hmap.get(this.currentClass);
+        // FunInfo funInfo = cInfo.class_methods.get(this.currentMethod);
+        // ClassInfo parent;           //parent declaration outside if scope for later use if needed
+        // boolean flag = false;
+
+        // if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name) && !cInfo.class_vars.containsKey(name)) {
+            
+        //     boolean ancestors;
+        //     if (cInfo.parentClass != null) {
+        //         ancestors = true;
+        //         parent = sTable.hmap.get(cInfo.parentClass);  //search for variable in ancestors
+        //     }else {
+        //         ancestors = false;
+        //         parent = null;
+        //     }
+        //     while (ancestors) {
+
+        //         if (parent.class_vars.containsKey(name)) {
+        //             flag = true;
+        //             break;
+        //         }
+        //         if (parent.parentClass != null) {
+        //             parent = sTable.hmap.get(parent.parentClass);
+        //         } else {
+        //             ancestors = false;
+        //         }
+        //     }
+        //     if (flag == false) {
+        //         throw new Exception("Variable " + name + " cannot be resolved to a variable.");
+        //     }
+        // } else {
+        //     parent = null;
+        // }
+        
+        // String type = "null";
+
+        // if (flag == true) {         //it means that variable found on an ancestor's scope
+        //     type = parent.class_vars.get(name);
+            
+        // }else { 
+
+        //     if (funInfo.fun_vars.containsKey(name)) {       //first check method's scope
+        //         type = funInfo.fun_vars.get(name);
+                
+        //     }else if (funInfo.arg_types.containsKey(name)) {
+        //         type = funInfo.arg_types.get(name);
+                
+        //     } else if (cInfo.class_vars.containsKey(name)) {     //then class' and its ancestors' scopes
+        //         type = cInfo.class_vars.get(name);
+                    
+        //     }
+        // }
         
 
         n.f1.accept(this, sTable);

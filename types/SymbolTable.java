@@ -28,7 +28,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 		return true;
 	}
 
-	public boolean checkParent(String parentClass) {			//function for checking former declaration of parent class
+	public boolean checkParent(String parentClass) {	//function for checking former declaration of parent class
 
 		if (hmap.containsKey(parentClass)) {	//it means that parent class has been declared before its children
 			return true;
@@ -100,7 +100,8 @@ public class SymbolTable {		//structure of each scope's hashmap
 		for (String ClassStr : hmap.keySet() ) {
 			
 			ClassInfo cinfo = hmap.get(ClassStr);
-			if (cinfo.isMain) {
+			if (cinfo.isMain) {				//store and initialize Main class offsets 
+											//only if it is going to be extended by other classes
 				offsetMethods.put(ClassStr, 0);
 				offsetVars.put(ClassStr, 0);
 				continue;

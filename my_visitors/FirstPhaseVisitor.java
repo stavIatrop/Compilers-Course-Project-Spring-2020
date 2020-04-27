@@ -38,8 +38,9 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       n.f0.accept(this, sTable);
       name = n.f1.accept(this, sTable);
       this.currentClass = name;
-      boolean entered = sTable.enter(null, name, true);
-      if (!entered){                                                                 //create entry for main class to keep track of the variables declared
+      boolean entered = sTable.enter(null, name, true);           //function for creating new class scope
+      
+      if (!entered) {  //create entry for main class to keep track of the variables declared
          throw new Exception("Main Class with name " + name + " already declared");      
       }
       n.f2.accept(this, sTable);
@@ -86,9 +87,9 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       String _ret=null;
       String name;
       n.f0.accept(this, sTable);
-      name = n.f1.accept(this, sTable);      //name = n.f1.f0.toString(); 	also works
+      name = n.f1.accept(this, sTable);
       this.currentClass = name;           
-      boolean entered = sTable.enter(null, name, false);
+      boolean entered = sTable.enter(null, name, false);    //function for creating new class scope
       if (!entered){
          throw new Exception("Class with name " + name + " already declared");      
       }
@@ -120,7 +121,7 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
       this.currentClass = name;
       n.f2.accept(this, sTable);
       parentClass = n.f3.accept(this, sTable);
-      boolean parentDeclared = sTable.checkParent(parentClass);
+      boolean parentDeclared = sTable.checkParent(parentClass);   //function for checking former declaration of parent class
       if (!parentDeclared) {
          throw new Exception("Parent class " + parentClass + " has not been declared.");
       }
