@@ -49,8 +49,6 @@ Also, for every MiniJava file, the program computes and prints some useful data 
     B.k : 17
     B.bla : 16
     
-### Implementation
-(To be continued)
 
 ### Compile
 ```
