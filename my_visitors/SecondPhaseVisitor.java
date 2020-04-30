@@ -2,7 +2,6 @@ package my_visitors;
 import visitor.GJDepthFirst;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import syntaxtree.*;
 import types.*;
@@ -482,6 +481,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f1.accept(this, sTable);
         type2 = n.f2.accept(this, sTable);
         if (type1 != "boolean" || type2 != "boolean") {
+            if (type1 == "this") {
+                type1 = this.currentClass;
+            }
+            if (type2 == "this") {
+                type2 = this.currentClass;
+            }
             throw new Exception("The operator && is undefined for the argument type(s) " + type1 + ", " + type2);
         }
         return "boolean";
@@ -499,6 +504,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f1.accept(this, sTable);
         type2 = n.f2.accept(this, sTable);
         if (type1 != "int" || type2 != "int") {
+            if (type1 == "this") {
+                type1 = this.currentClass;
+            }
+            if (type2 == "this") {
+                type2 = this.currentClass;
+            }
             throw new Exception("The operator < is undefined for the argument type(s) " + type1 + ", " + type2);
         }
         return "boolean";
@@ -549,6 +560,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         // }
 
         if (type1 != "int" || type2 != "int") {
+            if (type1 == "this") {
+                type1 = this.currentClass;
+            }
+            if (type2 == "this") {
+                type2 = this.currentClass;
+            }
             throw new Exception("The operator + is undefined for the argument type(s) " + type1 + ", " + type2);
         }
         return "int";
@@ -600,6 +617,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         // }
 
         if (type1 != "int" || type2 != "int") {
+            if (type1 == "this") {
+                type1 = this.currentClass;
+            }
+            if (type2 == "this") {
+                type2 = this.currentClass;
+            }
             throw new Exception("The operator - is undefined for the argument type(s) " + type1 + ", " + type2);
         }
         return "int";
@@ -651,6 +674,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         // }
 
         if (type1 != "int" || type2 != "int") {
+            if (type1 == "this") {
+                type1 = this.currentClass;
+            }
+            if (type2 == "this") {
+                type2 = this.currentClass;
+            }
             throw new Exception("The operator * is undefined for the argument type(s) " + type1 + ", " + type2);
         }
         return "int";
@@ -670,8 +699,11 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         if (PriType == "int" || PriType == "boolean") {
             throw new Exception("The type of the expression must be an array type but it resolved to " + PriType + ".");
         }
-        if (PriType == "this") {
-            throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
+        if (PriType != "int[]" && PriType != "boolean[]") {
+            if (PriType == "this") {
+                PriType = this.currentClass;
+            }
+            throw new Exception("The type of the expression must be an array type but it resolved to " + PriType + ".");
         }
         // if (PriType == "int[]" || PriType == "boolean[]") {
         //     throw new Exception("Only single dimension arrays are permitted.");
@@ -967,12 +999,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f2.accept(this, sTable);
         String ExpType;
         ExpType = n.f3.accept(this, sTable);
-        if (ExpType == "boolean") {
-            throw new Exception("The type of the expression must be an array type but it resolved to boolean");
-        }
-        if (ExpType == "int[]" || ExpType == "boolean[]") {
-            throw new Exception("Only single dimension arrays are permitted.");
-        }
+        // if (ExpType == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (ExpType == "int[]" || ExpType == "boolean[]") {
+        //     throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int in boolean array allocation.");
+        // }
 
         // if (ExpType != "int") {
         //     ExpType = sTable.lookupName(this.currentClass, this.currentMethod, ExpType);            
@@ -1003,12 +1035,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         n.f2.accept(this, sTable);
         String ExpType;
         ExpType = n.f3.accept(this, sTable);
-        if (ExpType == "boolean") {
-            throw new Exception("The type of the expression must be an array type but it resolved to boolean");
-        }
-        if (ExpType == "int[]" || ExpType == "boolean[]") {
-            throw new Exception("Only single dimension arrays are permitted.");
-        }
+        // if (ExpType == "boolean") {
+        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
+        // }
+        // if (ExpType == "int[]" || ExpType == "boolean[]") {
+        //     throw new Exception("Only single dimension arrays are permitted.");
+        // }
 
         // if (ExpType != "int") {
         //     ExpType = sTable.lookupName(this.currentClass, this.currentMethod, ExpType);            
