@@ -268,39 +268,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         if (type == null) {
             throw new Exception("Array variable " + name + " cannot be resolved to a variable.");
         }
-        // ClassInfo cInfo = sTable.hmap.get(this.currentClass);
-        // FunInfo funInfo = cInfo.class_methods.get(this.currentMethod);
-        // ClassInfo parent;           //parent declaration outside if scope for later use if needed
-        // boolean flag = false;
-
-        // if (!funInfo.fun_vars.containsKey(name) && !funInfo.arg_types.containsKey(name) && !cInfo.class_vars.containsKey(name)) {
-            
-        //     boolean ancestors;
-        //     if (cInfo.parentClass != null) {
-        //         ancestors = true;
-        //         parent = sTable.hmap.get(cInfo.parentClass);  //search for variable in ancestors
-        //     }else {
-        //         ancestors = false;
-        //         parent = null;
-        //     }
-        //     while (ancestors) {
-
-        //         if (parent.class_vars.containsKey(name)) {
-        //             flag = true;
-        //             break;
-        //         }
-        //         if (parent.parentClass != null) {
-        //             parent = sTable.hmap.get(parent.parentClass);
-        //         } else {
-        //             ancestors = false;
-        //         }
-        //     }
-        //     if (flag == false) {
-        //         throw new Exception("Array variable " + name + " cannot be resolved to a variable.");
-        //     }
-        // } else {
-        //     parent = null;
-        // }
         
         n.f1.accept(this, sTable);
 
@@ -314,24 +281,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         }
         n.f3.accept(this, sTable);
         n.f4.accept(this, sTable);
-        // String type = "null";
-
-        // if (flag == true) {         //it means that variable found on an ancestor's scope
-        //     type = parent.class_vars.get(name);
-            
-        // }else { 
-
-        //     if (funInfo.fun_vars.containsKey(name)) {       //first check method's scope
-        //         type = funInfo.fun_vars.get(name);
-                
-        //     }else if (funInfo.arg_types.containsKey(name)) {
-        //         type = funInfo.arg_types.get(name);
-                
-        //     } else if (cInfo.class_vars.containsKey(name)) {     //then class' and its ancestors' scopes
-        //         type = cInfo.class_vars.get(name);
-                    
-        //     }
-        // }
 
         if (type == "int" || type == "boolean") {
             throw new Exception("The type of the expression must be an array type but it resolved to " + type + ".");
@@ -580,41 +529,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
         String type1, type2;
         type1 = n.f0.accept(this, sTable);
-        // if (type1 == "boolean") {
-        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
-        // }
-        // if (type1 == "int[]" || type1 == "boolean[]") {
-        //     throw new Exception("Only single dimension arrays are permitted.");
-        // }
-        // if (type1.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
-        //     throw new Exception("Only boolean or int arrays are permitted, not " + type1.substring(0, type1.length() - 2) + " object arrays.");
-        // }
-        // if (type1 == "this") {
-        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
-        // }
-        // if (type1 != "int") {
-
-        //     type1 = sTable.lookupName(this.currentClass, this.currentMethod, type1);
-        // }
         
         n.f1.accept(this, sTable);
         type2 = n.f2.accept(this, sTable);
-        // if (type2 == "boolean") {
-        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
-        // }
-        // if (type2 == "int[]" || type2 == "boolean[]") {
-        //     throw new Exception("Only single dimension arrays are permitted.");
-        // }
-        // if (type2.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
-        //     throw new Exception("Only boolean or int arrays are permitted, not " + type2.substring(0, type2.length() - 2) + " object arrays.");
-        // }
-        // if (type2 == "this") {
-        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
-        // }
-        // if (type2 != "int") {
-
-        //     type2 = sTable.lookupName(this.currentClass, this.currentMethod, type2);
-        // }
 
         if (type1 != "int" || type2 != "int") {
             if (type1 == "this") {
@@ -637,41 +554,9 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
 
         String type1, type2;
         type1 = n.f0.accept(this, sTable);
-        // if (type1 == "boolean") {
-        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
-        // }
-        // if (type1 == "int[]" || type1 == "boolean[]") {
-        //     throw new Exception("Only single dimension arrays are permitted.");
-        // }
-        // if (type1.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
-        //     throw new Exception("Only boolean or int arrays are permitted, not " + type1.substring(0, type1.length() - 2) + " object arrays.");
-        // }
-        // if (type1 == "this") {
-        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
-        // }
-        // if (type1 != "int") {
-
-        //     type1 = sTable.lookupName(this.currentClass, this.currentMethod, type1);
-        // }
         
         n.f1.accept(this, sTable);
         type2 = n.f2.accept(this, sTable);
-        // if (type2 == "boolean") {
-        //     throw new Exception("The type of the expression must be an array type but it resolved to boolean");
-        // }
-        // if (type2 == "int[]" || type2 == "boolean[]") {
-        //     throw new Exception("Only single dimension arrays are permitted.");
-        // }
-        // if (type2.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
-        //     throw new Exception("Only boolean or int arrays are permitted, not " + type2.substring(0, type2.length() - 2) + " object arrays.");
-        // }
-        // if (type2 == "this") {
-        //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
-        // }
-        // if (type2 != "int") {
-
-        //     type2 = sTable.lookupName(this.currentClass, this.currentMethod, type2);
-        // }
 
         if (type1 != "int" || type2 != "int") {
             if (type1 == "this") {
@@ -705,13 +590,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
             }
             throw new Exception("The type of the expression must be an array type but it resolved to " + PriType + ".");
         }
-        // if (PriType == "int[]" || PriType == "boolean[]") {
-        //     throw new Exception("Only single dimension arrays are permitted.");
-        // }
-        // if (PriType.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
-        //     throw new Exception("Only boolean or int arrays are permitted, not " + PriType.substring(0, PriType.length() - 2) + " object arrays.");
-        // }
-        
 
         n.f1.accept(this, sTable);
         String ExpType;
@@ -722,9 +600,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         // }
         // if (ExpType == "int[]" || ExpType == "boolean[]") {
         //     throw new Exception("Only single dimension arrays are permitted.");
-        // }
-        // if (ExpType.contains("()") ) {            //LOGIKA THE THA MPEI POTE EDV ALLA TO AFHNV PROS TO PARON
-        //     throw new Exception("Only boolean or int arrays are permitted, not " + ExpType.substring(0, ExpType.length() - 2) + " object arrays.");
         // }
         // if (ExpType == "this") {
         //     throw new Exception("The type of the expression must be an array type but it resolved to " + this.currentClass + ".");
@@ -795,9 +670,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         if (PriType == "this") {
             className = this.currentClass;
         }
-        // else if(PriType.contains("()")) {
-        //     className = PriType.substring(0, PriType.length() - 2);
-        // }
+
         else {         //check if class is declared
 
             if( sTable.checkClass(PriType)) {
@@ -1006,10 +879,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         //     throw new Exception("Type mismatch: cannot convert from " + ExpType + " to int in boolean array allocation.");
         // }
 
-        // if (ExpType != "int") {
-        //     ExpType = sTable.lookupName(this.currentClass, this.currentMethod, ExpType);            
-        // }
-
         if (ExpType != "int") {
 
             if (ExpType == "this") {
@@ -1042,9 +911,6 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
         //     throw new Exception("Only single dimension arrays are permitted.");
         // }
 
-        // if (ExpType != "int") {
-        //     ExpType = sTable.lookupName(this.currentClass, this.currentMethod, ExpType);            
-        // }
         if (ExpType != "int") {
             if (ExpType == "this") {
                 ExpType = this.currentClass;
