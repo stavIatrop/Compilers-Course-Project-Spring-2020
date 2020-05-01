@@ -15,10 +15,17 @@ class A {
 		A obj;
 		B obj2;
 		obj2 = new B();
+		num_aux = new boolean[3].length;
 		obj = new B();
 		num_aux = obj2.fun(2, true, obj);
+		num_aux = (obj.bla())[1];
 		
 		return 2;
+	}
+	public int[] bla() {
+		int[] s;
+		s = new int[3];
+		return s;
 	}
 }
 
