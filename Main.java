@@ -21,8 +21,8 @@ public class Main {
                 fis = new FileInputStream(str);
                 MiniJavaParser parser = new MiniJavaParser(fis);
                 Goal root = parser.Goal();
-                System.err.println("Program parsed successfully.");
                 
+                VTable vTables = new VTable();
                 SymbolTable sTable = new SymbolTable();
                 //visitor that scans the parse tree an creates symbol table
                 FirstPhaseVisitor first = new FirstPhaseVisitor();
@@ -34,7 +34,7 @@ public class Main {
                     System.out.println();
                     continue;
                 }
-                sTable.printSTable();       //just a print method to check that everything is fine with symbol table
+                //sTable.printSTable();       //just a print method to check that everything is fine with symbol table
                 //visitor that does the rest type checking
                 SecondPhaseVisitor second = new SecondPhaseVisitor();
                 try {
@@ -46,8 +46,18 @@ public class Main {
                     System.out.println();
                     continue;
                 }
-                sTable.printOffsets();      //method to compute and print the offsets
-                
+                System.err.println("Program parsed successfully.");
+                sTable.printStoreOffsets(vTables);      //method to compute and print the offsets
+
+                LLVMIRVisitor llvmirVisitor = new LLVMIRVisitor(sTable, vTables);
+                try { 
+                    root.accept(llvmirVisitor, null);
+                }catch (Exception err){
+                    System.out.println("LLVM Visitor: Parse Error: " + err.getMessage());
+                    System.out.println();
+                    continue;
+
+                }
             }
             catch(ParseException ex){
                 System.out.println(ex.getMessage());

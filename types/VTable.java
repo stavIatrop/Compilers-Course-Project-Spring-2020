@@ -1,11 +1,13 @@
+package types;
+
 import java.util.LinkedHashMap;
 
 public class VTable {
 
-    public LinkedHashMap <String, VTableInfo> vtables;
+    public LinkedHashMap <String, VTableInfo> VTablesHMap;
 
     public VTable() {
-        vtables = new LinkedHashMap<String, VTableInfo>();
+        VTablesHMap = new LinkedHashMap<String, VTableInfo>();
     }
 
 }

@@ -88,7 +88,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 		return true;	//not overriding any method, no parse errors
 	}
 
-	public void printOffsets() {
+	public void printStoreOffsets(VTable vtables) {
 		LinkedHashMap<String, Integer> offsets = new LinkedHashMap<String, Integer>();
 		offsets.put("int", 4);
 		offsets.put("boolean", 1);
@@ -99,28 +99,55 @@ public class SymbolTable {		//structure of each scope's hashmap
 
 		for (String ClassStr : hmap.keySet() ) {
 			
+			System.out.println("-----------Class " + ClassStr + "-----------" );
+
 			ClassInfo cinfo = hmap.get(ClassStr);
+			
 			if (cinfo.isMain) {				//store and initialize Main class offsets 
 											//only if it is going to be extended by other classes
+				vtables.VTablesHMap.put(ClassStr, new VTableInfo(true));
+				
 				offsetMethods.put(ClassStr, 0);
 				offsetVars.put(ClassStr, 0);
 				continue;
 			}
+			vtables.VTablesHMap.put(ClassStr, new VTableInfo(false));
+			VTableInfo currentVTable = vtables.VTablesHMap.get((ClassStr));
+
 			if (cinfo.parentClass == null ) {
+				
 				offsetMethods.put(ClassStr, 0);
 				offsetVars.put(ClassStr, 0);
 			}else {			//this search only one ancestor "behind" works because
 							//LinkedHashMap stores the classes with insertion order
 							//and also because when we have "class B extends A”, A must be defined before B
+				System.out.println("---Parent's Variables---");
 				offsetMethods.put(ClassStr, offsetMethods.get(cinfo.parentClass));
 				offsetVars.put(ClassStr, offsetVars.get(cinfo.parentClass));
+				//get parent's V-table
+				VTableInfo parentVTable = vtables.VTablesHMap.get(cinfo.parentClass);
+				for (String field : parentVTable.fieldsVTable.keySet()) {	//copy offset table of parent's fields
+
+					Integer fieldOffset = parentVTable.fieldsVTable.get(field);
+					currentVTable.fieldsVTable.put(field, fieldOffset);
+					System.out.println(cinfo.parentClass + "." + field + " : " + fieldOffset);
+				}
+				System.out.println("---Parent's Methods---");
+				for (String method : parentVTable.methodsVTable.keySet()) {		//copy offset table of parent's methods
+
+					Integer methodOffset = parentVTable.methodsVTable.get(method);
+					currentVTable.methodsVTable.put(method, methodOffset);
+					System.out.println(cinfo.parentClass + "." + method + " : " + methodOffset);
+
+				}
 			}
 
-			System.out.println("-----------Class " + ClassStr + "-----------" );
+			
 			System.out.println("---Variables---");
 			for (String VarStr : cinfo.class_vars.keySet()) {
 
 				String type = cinfo.class_vars.get(VarStr);
+				currentVTable.fieldsVTable.put(VarStr, offsetVars.get(ClassStr));
 				System.out.println(ClassStr + "." + VarStr + " : " + offsetVars.get(ClassStr));
 				if (!offsets.containsKey(type)) {
 					offsetVars.put(ClassStr, offsetVars.get(ClassStr) + 8);
@@ -137,6 +164,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 				if (cinfo.class_methods.get(MethodStr).isOverriding)
 					continue;
 				
+				currentVTable.methodsVTable.put(MethodStr, offsetMethods.get(ClassStr));
 				System.out.println(ClassStr + "." + MethodStr + " : " + offsetMethods.get(ClassStr));
 				offsetMethods.put(ClassStr, offsetMethods.get(ClassStr) + 8);
 			}
