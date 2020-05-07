@@ -1,5 +1,5 @@
 import syntaxtree.*;
-import types.SymbolTable;
+import types.*;
 import visitor.*;
 import my_visitors.*;
 
