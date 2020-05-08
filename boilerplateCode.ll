@@ -25,3 +25,4 @@ define void @throw_nsz() {
     call void @exit(i32 1)
     ret void
 }
+

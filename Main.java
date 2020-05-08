@@ -79,13 +79,13 @@ public class Main {
                 if (!vTables.createVTable(llvmFile, sTable)) {
                     continue;       //something went wrong 
                 }
-                
+
                 LLVMIRVisitor llvmirVisitor = new LLVMIRVisitor(sTable, vTables, llvmFile);
                 
                 try { 
                     root.accept(llvmirVisitor, null);
                 }catch (Exception err){
-                    System.out.println("LLVM Visitor: Parse Error: " + err.getMessage());
+                    System.out.println("LLVM Visitor: Compile Error: " + err.getMessage());
                     System.out.println();
                     continue;
 
