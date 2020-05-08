@@ -75,6 +75,11 @@ public class Main {
                     System.out.println(ex.getMessage());
                     continue;
                 }
+                
+                if (!vTables.createVTable(llvmFile, sTable)) {
+                    continue;       //something went wrong 
+                }
+                
                 LLVMIRVisitor llvmirVisitor = new LLVMIRVisitor(sTable, vTables, llvmFile);
                 
                 try { 
