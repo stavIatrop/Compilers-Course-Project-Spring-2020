@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.nio.charset.StandardCharsets;
 
 public class VTable {
@@ -78,10 +77,13 @@ public class VTable {
         }catch (IOException ex) {
             System.out.println(ex.getMessage());
             return false;
-        }
-
-        
+        }        
         return true;
+    }
 
+    public Integer findOffset(String className, String field) {
+
+        VTableInfo vinfo = VTablesHMap.get(className);
+        return vinfo.fieldsVTable.get(field);
     }
 }

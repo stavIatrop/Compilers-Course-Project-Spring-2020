@@ -72,7 +72,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f15.accept(this, argu);
         n.f16.accept(this, argu);
         n.f17.accept(this, argu);
-        if(!emit("}")){
+        if(!emit("\tret i32 0\n}")){
             throw new Exception("Something went wrong while compiling main function.");
         }
         return _ret;
@@ -197,20 +197,67 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String _ret=null;
         String id;
         id = n.f0.accept(this, argu);
-        //String type = sTable.lookupName(this.currentClass, this.currentMethod, id);
-        // if (type == "int") {
-        //     type = "i32";
-        // }else if (type == "boolean"){
-        //     type = "i1";
-        // }else if (type == "int[]"){
-        //     type = "i32*";
-        // }else {
-        //     type = "i8*";
-        // }
+        String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
+        if (ret == null) {
+            throw new Exception("Name " + id + " is not declared.");
+        }
+        String type = ret[0];
+        if( type == "int") {
+            type = "i32";
+        }else if (type == "boolean") {
+            type = "i1";
+        }else if (type == "int[]"){
+            type = "i32*";
+        }else {
+            type = "i8*";
+        }
+
+        String scope = ret[1];
+        
+        String emitStr = "\tstore " + type + " ";
+        String var = "";
+        if (scope == "class") {
+
+            Integer offset = vTables.findOffset(this.currentClass, id);
+
+        }else if (scope == "fun_var") {
+            var = "%" + id;
+        } else {
+
+        }
+
 
         n.f1.accept(this, argu);
-        n.f2.accept(this, argu);
+        String exp;
+        exp = n.f2.accept(this, argu);
+        emitStr = emitStr + exp + ", " + type + "* " + var + "\n\n";
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling assignment statement of " + id + " variable");
+        }
         n.f3.accept(this, argu);
+        return _ret;
+    }
+
+
+    /**
+    * f0 -> "System.out.println"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> ";"
+    */
+    public String visit(PrintStatement n, String argu) throws Exception {
+        String _ret=null;
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        String exp;
+        exp = n.f2.accept(this, argu);
+        String emitStr = "\tcall void (i32) @print_int(i32 " + exp + ")\n\n";
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling print statement");
+        }
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
         return _ret;
     }
 
@@ -218,7 +265,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     * f0 -> <INTEGER_LITERAL>
     */
     public String visit(IntegerLiteral n, String argu) throws Exception {
-        return "int";
+        return n.f0.accept(this, argu);
     }
 
     public String visit(NodeToken n, String argu) {   
