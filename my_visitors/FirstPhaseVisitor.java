@@ -236,7 +236,7 @@ public class FirstPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     * f1 -> Identifier()
     * f2 -> ";"
     */
-   public String visit(VarDeclaration n, SymbolTable sTable) throws Exception, Exception{
+   public String visit(VarDeclaration n, SymbolTable sTable) throws Exception {
       String type, id;
       type = n.f0.accept(this, sTable);
       id = n.f1.accept(this, sTable);

@@ -332,4 +332,72 @@ public class SymbolTable {		//structure of each scope's hashmap
 
 	}
 
+	public String[] lookupNameScope(String className, String methodName, String idName) {
+
+		ClassInfo cInfo;
+        cInfo = hmap.get(className);
+        FunInfo funInfo = cInfo.class_methods.get(methodName);  //search the identifier idName to current method's scope
+		String scope = "";
+        ClassInfo parent;           //parent declaration outside if scope for later use is needed
+        boolean flag = false;
+
+        if (!funInfo.fun_vars.containsKey(idName) && !funInfo.arg_types.containsKey(idName) && !cInfo.class_vars.containsKey(idName)) {
+            
+            boolean ancestors;
+            if (cInfo.parentClass != null) {
+                ancestors = true;
+                parent = hmap.get(cInfo.parentClass);  //search for variable in ancestors
+            }else {
+                ancestors = false;
+                parent = null;
+            }
+            while (ancestors) {
+
+                if (parent.class_vars.containsKey(idName)) {
+                    flag = true;
+                    break;
+                }
+                if (parent.parentClass != null) {
+                    parent = hmap.get(parent.parentClass);
+                } else {
+                    ancestors = false;
+                }
+            }
+            if (flag == false) {
+				return null;
+            }
+        } else {
+            parent = null;
+        }
+        
+        String type = "null";
+
+		if (flag == true) {         //it means that variable found on an ancestor's scope
+			scope = "class";			//to search in the field v-table
+            type = parent.class_vars.get(idName);
+            
+        }else { 
+
+			if (funInfo.fun_vars.containsKey(idName)) {       //first check method's scope
+				scope = "fun_var";
+                type = funInfo.fun_vars.get(idName);
+                
+            }else if (funInfo.arg_types.containsKey(idName)) {
+				scope = "arg";
+                type = funInfo.arg_types.get(idName);
+                
+			} else if (cInfo.class_vars.containsKey(idName)) {     //then class' and its ancestors' scopes
+				scope = "class";
+                type = cInfo.class_vars.get(idName);
+                    
+            }
+		}
+
+		String[] ret = new String[2];
+		ret[0] = type;
+		ret[1] = scope;
+		return ret;
+
+	}
+
 }
