@@ -103,8 +103,20 @@ public class VTable {
         VTableInfo vInfo = VTablesHMap.get(className);
         ArrayList<Integer> vals = new ArrayList<Integer>();
         vals.addAll(vInfo.fieldsVTable.values());
-        Integer size = vals.get(vals.size() - 1);
+        Integer size = 8 + vals.get(vals.size() - 1);
         ClassInfo cInfo = sTable.hmap.get(className);
-        cInfo.class_vars.get(vInfo.fieldsVTable.)
+        ArrayList<String> fields = new ArrayList<String>();
+        fields.addAll(vInfo.fieldsVTable.keySet());
+        String lastVar = fields.get(fields.size() - 1);
+        String type = cInfo.class_vars.get(lastVar);
+        if (type == "int") {
+            size = size + 4;
+        }else if ( type == "boolean"){
+            size = size + 1;
+        }else {
+            size = size + 8;
+        }
+
+        return size;
     }
 }

@@ -76,7 +76,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f15.accept(this, argu);
         n.f16.accept(this, argu);
         n.f17.accept(this, argu);
-        if(!emit("\tret i32 0\n}")){
+        if(!emit("\tret i32 0\n}\n\n")){
             throw new Exception("Something went wrong while compiling main function.");
         }
         return _ret;
@@ -145,8 +145,41 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String visit(MethodDeclaration n, String argu) throws Exception {
         String _ret=null;
         n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
+        String retType;
+        retType = n.f1.accept(this, argu);
+        if (retType == "int") {
+            retType = "i32";
+        }else if (retType == "boolean") {
+            retType = "i1";
+        }else if (retType == "int[]") {
+            retType = "i32*" ;
+        }else {
+            retType = "i8*";
+        }
         this.currentMethod = n.f2.accept(this, argu);
+        FunInfo fInfo = sTable.lookupMethod(this.currentClass, this.currentMethod, null);
+        String emitStr = "define " + retType + " @" + this.currentClass + "." + this.currentMethod + "(i8* %this";
+        if (fInfo.arg_types.isEmpty()) {
+            emitStr = emitStr + ") {\n";
+        }else {
+            for (String arg : fInfo.arg_types.keySet()) {
+
+                String argType = fInfo.arg_types.get(arg);
+                if (argType == "int") {
+                    emitStr = emitStr + ", " + "i32 " + "%." + arg;
+                }else if (argType == "boolean") {
+                    emitStr = emitStr + ", " + "i1 " + "%." + arg;
+                }else if (argType == "int[]") {
+                    emitStr = emitStr + ", " + "i32* " + "%." + arg;
+                }else {
+                    emitStr = emitStr + ", " + "i8* " + "%." + arg;
+                }
+            }
+            emitStr = emitStr + ") {\n";
+        }
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling method declaration.");
+        }
         n.f3.accept(this, argu);
         n.f4.accept(this, argu);
         n.f5.accept(this, argu);
@@ -158,6 +191,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f10.accept(this, argu);
         n.f11.accept(this, argu);
         n.f12.accept(this, argu);
+        emitStr = "}\n\n";
+        emit(emitStr);
         return _ret;
     }
 
@@ -297,6 +332,10 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         className = n.f1.accept(this, argu);
         String reg = generateRegister();
         Integer objSize = vTables.getSizeOfObj(className, sTable);
+        String emitString = "\t" + reg + " = call i8* @calloc(i32 1, i32 " + objSize + ")\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with allocation expression.");
+        }
         n.f2.accept(this, argu);
         n.f3.accept(this, argu);
         return null;
