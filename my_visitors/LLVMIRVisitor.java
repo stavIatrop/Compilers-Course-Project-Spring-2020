@@ -330,15 +330,32 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         this.primaryExp = false;
         String className;
         className = n.f1.accept(this, argu);
-        String reg = generateRegister();
+        String regCalloc = generateRegister();
         Integer objSize = vTables.getSizeOfObj(className, sTable);
-        String emitString = "\t" + reg + " = call i8* @calloc(i32 1, i32 " + objSize + ")\n\n";
+        String emitString = "\t" + regCalloc + " = call i8* @calloc(i32 1, i32 " + objSize + ")\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with allocation expression.");
+        }
+        String regBitcast = generateRegister();
+        emitString = "\t" + regBitcast + " = bitcast i8* " + regCalloc + " to i8***\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with allocation expression.");
+        }
+        String regGetEl = generateRegister();
+        VTableInfo vInfo = vTables.VTablesHMap.get(className);
+        Integer numMethods = vInfo.methodsVTable.size();
+        emitString = "\t" + regGetEl + " = getelementptr [" + numMethods.toString() + " x i8*], [" +
+                        numMethods.toString() + " x i8*]* @." + className + "_vtable, i32 0, i32 0\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with allocation expression.");
+        }
+        emitString = "\tstore i8** " + regGetEl + ", i8*** " + regBitcast + "\n\n";
         if (!emit(emitString)) {
             throw new Exception("Something went wrong with allocation expression.");
         }
         n.f2.accept(this, argu);
         n.f3.accept(this, argu);
-        return null;
+        return regCalloc;
     }
     /**
     * f0 -> <IDENTIFIER>
