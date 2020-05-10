@@ -18,11 +18,15 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String currentClass;
     public String currentMethod;
     public boolean classVar;
+    public Integer register;
+    public boolean primaryExp;
 
     public LLVMIRVisitor(SymbolTable stable, VTable vtables, File file) {
         this.sTable = stable;
         this.vTables = vtables;
         this.LLVMfile = file;
+        this.register = 0;
+        this.primaryExp = false;
     }
 
     /**
@@ -219,11 +223,11 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         if (scope == "class") {
 
             Integer offset = vTables.findOffset(this.currentClass, id);
-
+            //TO BE CONTINUED
         }else if (scope == "fun_var") {
             var = "%" + id;
         } else {
-
+            //TO BE CONTINUED
         }
 
 
@@ -259,6 +263,87 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f3.accept(this, argu);
         n.f4.accept(this, argu);
         return _ret;
+    }
+
+
+    /**
+    * f0 -> IntegerLiteral()
+    *       | TrueLiteral()
+    *       | FalseLiteral()
+    *       | Identifier()
+    *       | ThisExpression()
+    *       | ArrayAllocationExpression()
+    *       | AllocationExpression()
+    *       | BracketExpression()
+    */
+    public String visit(PrimaryExpression n, String argu) throws Exception {
+        this.primaryExp = true;
+        String primExp = n.f0.accept(this, argu);
+        this.primaryExp = false;
+        return primExp;
+    }
+
+    /**
+    * f0 -> "new"
+    * f1 -> Identifier()
+    * f2 -> "("
+    * f3 -> ")"
+    */
+    public String visit(AllocationExpression n, String argu) throws Exception {
+
+        n.f0.accept(this, argu);
+        this.primaryExp = false;
+        n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        n.f3.accept(this, argu);
+        return null;
+    }
+    /**
+    * f0 -> <IDENTIFIER>
+    */
+    public String visit(Identifier n, String argu) throws Exception {
+        String id = n.f0.accept(this, argu);
+        if (this.primaryExp) {
+
+            String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
+            if (ret == null) {
+                throw new Exception("Name " + id + " is not declared.");
+            }
+
+            String type = ret[0];
+            
+            String scope = ret[1];
+
+            if (scope == "class") {
+
+                Integer offset = vTables.findOffset(this.currentClass, id);
+                //TO BE CONTINUED
+
+            }else if (scope == "fun_var") {     //load the fun var
+                if( type == "int") {
+
+                    type = "i32";
+                    String var = "%" + id;
+                    String reg = generateRegister();
+                    String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
+                    emit(emitStr);
+                    return reg;
+                }else if (type == "boolean") {
+                    type = "i1";
+
+                }else if (type == "int[]"){
+                    type = "i32*";
+                }else {
+                    type = "i8*";
+                } 
+                
+            } else {
+                //TO BE CONTINUED
+            }
+        }
+        
+
+        return id;
     }
 
     /**
@@ -306,4 +391,13 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return true;
     }
 
+    public String generateRegister(){
+        String reg = "%_" + this.register.toString();
+        this.register += 1;
+        return reg;
+    }
+
+    public String generateLabel(){
+        return null;
+    }
 }
