@@ -583,7 +583,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
             }
         }
         FunInfo fInfo;
-        fInfo = sTable.lookupMethod(className, methodName);
+        fInfo = sTable.lookupMethod(className, methodName, null); //third argument is needed for the llvm visitor only
         if (fInfo == null) {
             throw new Exception("The method " + methodName + " is undefined for the type " + className);
         }

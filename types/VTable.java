@@ -34,13 +34,16 @@ public class VTable {
                 }
                 for (String methodStr : vInfo.methodsVTable.keySet() ) {
                                         
-                    FunInfo finfo = sTable.lookupMethod(classStr, methodStr);
+                    String[] parentName = new String[1];
+                    parentName[0] = "";
+                    FunInfo finfo = sTable.lookupMethod(classStr, methodStr, parentName);
                     if (finfo == null) {
                         pw.close();
                         System.out.print("Something went wrong while searching in symbol table for " + methodStr +
                                          " method of class " + classStr);    
                         return false;   //something went wrong
                     }
+                    
                     String retType = finfo.return_type;
                     if (retType == "int") {
                         retType = "i32";
@@ -65,7 +68,12 @@ public class VTable {
                         }
                     }
                     argsString = "i8*" + argsString;
-                    pw.printf("\ti8* bitcast (%s (%s)* @%s.%s to i8*),\n", retType, argsString, classStr, methodStr);
+                    if (parentName[0] == "") {
+                        pw.printf("\ti8* bitcast (%s (%s)* @%s.%s to i8*),\n", retType, argsString, classStr, methodStr);   
+                    }else {
+                        pw.printf("\ti8* bitcast (%s (%s)* @%s.%s to i8*),\n", retType, argsString, parentName[0], methodStr);
+
+                    }
                 }
                 pw.print("]\n\n");
             }
@@ -85,5 +93,18 @@ public class VTable {
 
         VTableInfo vinfo = VTablesHMap.get(className);
         return vinfo.fieldsVTable.get(field);
+    }
+
+    public Integer getSizeOfObj(String className, SymbolTable sTable) {
+
+        if (!VTablesHMap.containsKey(className)) {
+            return -1;
+        }
+        VTableInfo vInfo = VTablesHMap.get(className);
+        ArrayList<Integer> vals = new ArrayList<Integer>();
+        vals.addAll(vInfo.fieldsVTable.values());
+        Integer size = vals.get(vals.size() - 1);
+        ClassInfo cInfo = sTable.hmap.get(className);
+        cInfo.class_vars.get(vInfo.fieldsVTable.)
     }
 }

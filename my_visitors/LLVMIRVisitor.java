@@ -93,7 +93,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String visit(ClassDeclaration n, String argu) throws Exception {
         String _ret=null;
         n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
+        this.currentClass = n.f1.accept(this, argu);
         n.f2.accept(this, argu);
         this.classVar = true;
         n.f3.accept(this, argu);
@@ -115,7 +115,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String visit(ClassExtendsDeclaration n, String argu) throws Exception {
         String _ret=null;
         n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
+        this.currentClass = n.f1.accept(this, argu);
         n.f2.accept(this, argu);
         n.f3.accept(this, argu);
         n.f4.accept(this, argu);
@@ -146,7 +146,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String _ret=null;
         n.f0.accept(this, argu);
         n.f1.accept(this, argu);
-        n.f2.accept(this, argu);
+        this.currentMethod = n.f2.accept(this, argu);
         n.f3.accept(this, argu);
         n.f4.accept(this, argu);
         n.f5.accept(this, argu);
@@ -203,7 +203,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         id = n.f0.accept(this, argu);
         String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
         if (ret == null) {
-            throw new Exception("Name " + id + " is not declared.");
+            throw new Exception("Name " + id + " is not declared in assignment.");
         }
         String type = ret[0];
         if( type == "int") {
@@ -293,7 +293,10 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
         n.f0.accept(this, argu);
         this.primaryExp = false;
-        n.f1.accept(this, argu);
+        String className;
+        className = n.f1.accept(this, argu);
+        String reg = generateRegister();
+        Integer objSize = vTables.getSizeOfObj(className, sTable);
         n.f2.accept(this, argu);
         n.f3.accept(this, argu);
         return null;

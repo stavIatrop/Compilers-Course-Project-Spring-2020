@@ -237,7 +237,7 @@ public class SymbolTable {		//structure of each scope's hashmap
 	}
 
 	
-	public FunInfo lookupMethod(String className, String methodName) {
+	public FunInfo lookupMethod(String className, String methodName, String[] parentName) {
 
 		ClassInfo cInfo = hmap.get(className);
 		FunInfo fInfo;
@@ -251,6 +251,8 @@ public class SymbolTable {		//structure of each scope's hashmap
 
 		if (cInfo.parentClass != null) {
 			ancestors = true;
+			if (parentName != null)
+				parentName[0] = cInfo.parentClass;
 			parent = hmap.get(cInfo.parentClass);  //search for method in ancestors
 		}else {
 			ancestors = false;
@@ -263,15 +265,19 @@ public class SymbolTable {		//structure of each scope's hashmap
 				return fInfo;
 			}
 			if (parent.parentClass != null) {
+				if (parentName != null)
+					parentName[0] = parent.parentClass;
 				parent = hmap.get(parent.parentClass);
 			} else {
+				if (parentName != null)
+					parentName[0] = "";
 				ancestors = false;
 			}
 		}
 		return null;
 	}
 
-	
+
 	public String lookupName(String className, String methodName, String idName) {
 
 		ClassInfo cInfo;
@@ -339,7 +345,7 @@ public class SymbolTable {		//structure of each scope's hashmap
         FunInfo funInfo = cInfo.class_methods.get(methodName);  //search the identifier idName to current method's scope
 		String scope = "";
         ClassInfo parent;           //parent declaration outside if scope for later use is needed
-        boolean flag = false;
+        boolean flag = false;		
 
         if (!funInfo.fun_vars.containsKey(idName) && !funInfo.arg_types.containsKey(idName) && !cInfo.class_vars.containsKey(idName)) {
             
