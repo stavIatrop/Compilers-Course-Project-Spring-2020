@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import types.*;
 import visitor.GJDepthFirst;
@@ -20,8 +23,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public boolean classVar;
     public Integer register;
     public boolean primaryExp;
-    public boolean messageSend;
     public String messageSendClass;
+    ArrayList<String> methodParams = new ArrayList<String>();
 
     public LLVMIRVisitor(SymbolTable stable, VTable vtables, File file) {
         this.sTable = stable;
@@ -30,7 +33,6 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         this.register = 0;
         this.primaryExp = false;
         this.messageSendClass = "";
-        this.messageSend = false;
     }
 
     /**
@@ -75,6 +77,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f11.accept(this, argu);
         n.f12.accept(this, argu);
         n.f13.accept(this, argu);
+
         this.classVar = false;
         n.f14.accept(this, argu);
         n.f15.accept(this, argu);
@@ -239,6 +242,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String visit(AssignmentStatement n, String argu) throws Exception {
         String _ret=null;
         String id;
+
         id = n.f0.accept(this, argu);
         String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
         if (ret == null) {
@@ -306,7 +310,6 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String methodName;
         methodName = n.f2.accept(this, argu);
         String regGetElem = generateRegister();
-        //need to know the class type of primary expression somehow?!
 
         Integer methodOffset = vTables.findMethodOffset(this.messageSendClass, methodName);
         emitString = "\t" + regGetElem + " = getelementptr i8*, i8** " + regLoad + ", i32 " + methodOffset + "\n\n";
@@ -315,12 +318,127 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         emitString = "\t" + regLoad2 + " = load i8*, i8** " + regGetElem + "\n\n";
         emit(emitString);
         
+        String regBitcast2 = generateRegister();
+        
+        FunInfo fInfo = sTable.lookupMethod(this.messageSendClass, methodName, null);
+        String retType = fInfo.return_type;
+        if (retType == "int")
+            retType = "i32";
+        else if (retType == "boolean")
+            retType = "i1";
+        else if (retType == "int[]")
+            retType = "i32*";
+        else
+            retType = "i8*";
+        emitString = "\t" + regBitcast2 + " = bitcast i8* " + regLoad2 + " to " + retType + " (i8*";
+
+        ArrayList<String> arg_types = new ArrayList<String>(fInfo.arg_types.values());
+
+        for ( String arg : arg_types) {
+            if (arg == "int")
+                arg = "i32";
+            else if (arg == "boolean")
+                arg = "i1";
+            else if (arg == "int[]")
+                arg = "i32*";
+            else
+                arg = "i8*";
+            
+            emitString = emitString + ", " + arg;
+        }
+        emitString = emitString + ")*\n\n";
+        emit(emitString);
+
+        
         n.f3.accept(this, argu);
-        n.f4.accept(this, argu);
+        String expStr;
+        expStr = n.f4.accept(this, argu);
+        String regCall = generateRegister();
+        emitString = "\t" + regCall + " = call " + retType + " " + regBitcast2 + "(i8* " + regPrimExp;
+
+        if (expStr != null) {
+
+            ArrayList<String> expList = new ArrayList<String>();
+            int j = 0;
+            if (expStr.contains(",")) {
+                int i;
+                for (i = 0; i < expStr.length(); i++) {
+                    if (expStr.charAt(i) == ',') {
+                        String sub;
+                        sub = expStr.substring(j, i);
+                        j = i + 1;
+                        expList.add(sub);
+                    }
+                }
+                String sub;
+                sub = expStr.substring(j, i);
+                expList.add(sub);
+            }else {
+                expList.add(expStr);
+            }
+            for (int i = 0; i < expList.size(); i++){
+
+                String argType = arg_types.get(i);
+                if (argType == "int")
+                    argType = "i32";
+                else if (argType == "boolean")
+                    argType = "i1";
+                else if (argType == "int[]")
+                    argType = "i32*";
+                else
+                    argType = "i8*";
+                
+                emitString = emitString + ", " + argType + " " + expList.get(i);
+            
+            }
+        }
+        emitString = emitString + ")\n\n";
+        emit(emitString);
+        
         n.f5.accept(this, argu);
-        return _ret;
+        return regCall;
     }
 
+
+
+    /**
+    * f0 -> Expression()
+    * f1 -> ExpressionTail()
+    */
+    public String visit(ExpressionList n, String argu) throws Exception {
+        String expType;
+        this.methodParams.add("");
+        expType = n.f0.accept(this, argu);
+        // if (expType == "this") {
+        //     expType = this.currentClass;
+        // }
+        int lastIndex = this.methodParams.size() - 1;
+        this.methodParams.set(lastIndex, expType);
+        
+        n.f1.accept(this, argu);
+        
+        String copy = this.methodParams.get(lastIndex);
+        this.methodParams.remove(lastIndex);
+        return copy;
+
+        
+    }
+
+    /**
+     * f0 -> ","
+    * f1 -> Expression()
+    */
+    public String visit(ExpressionTerm n, String argu) throws Exception {
+        String expType;
+        int lastIndex = this.methodParams.size() - 1;
+        n.f0.accept(this, argu);
+        expType = n.f1.accept(this, argu);
+        // if (expType == "this") {
+        //     expType = this.currentClass;
+        // }
+        this.methodParams.set(lastIndex, this.methodParams.get(lastIndex) + "," + expType);
+        return null;
+    }
     /**
     * f0 -> "System.out.println"
     * f1 -> "("
@@ -369,11 +487,14 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     */
     public String visit(AllocationExpression n, String argu) throws Exception {
 
+
         n.f0.accept(this, argu);
         this.primaryExp = false;
         String className;
         className = n.f1.accept(this, argu);
+        this.messageSendClass = className;
         String regCalloc = generateRegister();
+
         Integer objSize = vTables.getSizeOfObj(className, sTable);
         String emitString = "\t" + regCalloc + " = call i8* @calloc(i32 1, i32 " + objSize + ")\n\n";
         if (!emit(emitString)) {

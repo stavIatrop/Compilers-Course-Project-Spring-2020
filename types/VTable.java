@@ -102,25 +102,33 @@ public class VTable {
 
     public Integer getSizeOfObj(String className, SymbolTable sTable) {
 
+        
         if (!VTablesHMap.containsKey(className)) {
             return -1;
         }
         VTableInfo vInfo = VTablesHMap.get(className);
         ArrayList<Integer> vals = new ArrayList<Integer>();
         vals.addAll(vInfo.fieldsVTable.values());
-        Integer size = 8 + vals.get(vals.size() - 1);
-        ClassInfo cInfo = sTable.hmap.get(className);
-        ArrayList<String> fields = new ArrayList<String>();
-        fields.addAll(vInfo.fieldsVTable.keySet());
-        String lastVar = fields.get(fields.size() - 1);
-        String type = cInfo.class_vars.get(lastVar);
-        if (type == "int") {
-            size = size + 4;
-        }else if ( type == "boolean"){
-            size = size + 1;
-        }else {
-            size = size + 8;
+        
+        Integer size;
+        if (vals.size() != 0) {
+            size = 8 + vals.get(vals.size() - 1);
+            ClassInfo cInfo = sTable.hmap.get(className);
+            ArrayList<String> fields = new ArrayList<String>();
+            fields.addAll(vInfo.fieldsVTable.keySet());
+            String lastVar = fields.get(fields.size() - 1);
+            String type = cInfo.class_vars.get(lastVar);
+            if (type == "int") {
+                size = size + 4;
+            }else if ( type == "boolean"){
+                size = size + 1;
+            }else {
+                size = size + 8;
+            }
         }
+        else
+            size = 8;
+        
 
         return size;
     }
