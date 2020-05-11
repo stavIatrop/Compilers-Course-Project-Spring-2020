@@ -20,6 +20,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public boolean classVar;
     public Integer register;
     public boolean primaryExp;
+    public boolean messageSend;
+    public String messageSendClass;
 
     public LLVMIRVisitor(SymbolTable stable, VTable vtables, File file) {
         this.sTable = stable;
@@ -27,6 +29,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         this.LLVMfile = file;
         this.register = 0;
         this.primaryExp = false;
+        this.messageSendClass = "";
+        this.messageSend = false;
     }
 
     /**
@@ -279,6 +283,45 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
 
     /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "."
+    * f2 -> Identifier()
+    * f3 -> "("
+    * f4 -> ( ExpressionList() )?
+    * f5 -> ")"
+    */
+    public String visit(MessageSend n, String argu) throws Exception {
+        String _ret=null;
+        String regPrimExp;
+        regPrimExp = n.f0.accept(this, argu);
+        String emitString;
+        String regBitcast = generateRegister();
+        emitString = "\t" + regBitcast + " = bitcast i8* " + regPrimExp + " to i8***\n\n";
+        emit(emitString);
+        String regLoad = generateRegister();
+        emitString = "\t" + regLoad + " = load i8**, i8*** " + regBitcast + "\n\n";
+        emit(emitString);
+        
+        n.f1.accept(this, argu);
+        String methodName;
+        methodName = n.f2.accept(this, argu);
+        String regGetElem = generateRegister();
+        //need to know the class type of primary expression somehow?!
+
+        Integer methodOffset = vTables.findMethodOffset(this.messageSendClass, methodName);
+        emitString = "\t" + regGetElem + " = getelementptr i8*, i8** " + regLoad + ", i32 " + methodOffset + "\n\n";
+        emit(emitString);
+        String regLoad2 = generateRegister();
+        emitString = "\t" + regLoad2 + " = load i8*, i8** " + regGetElem + "\n\n";
+        emit(emitString);
+        
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        n.f5.accept(this, argu);
+        return _ret;
+    }
+
+    /**
     * f0 -> "System.out.println"
     * f1 -> "("
     * f2 -> Expression()
@@ -376,6 +419,20 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             if (scope == "class") {
 
                 Integer offset = vTables.findOffset(this.currentClass, id);
+                if( type == "int") {
+
+                    
+                }else if (type == "boolean") {
+                    
+
+                }else if (type == "int[]"){     //int array different load 
+                    
+                }else if (type == "boolean[]") {    //boolean array different load
+                    
+                }else {
+                    this.messageSendClass = type;
+
+                }
                 //TO BE CONTINUED
 
             }else if (scope == "fun_var") {     //load the fun var
@@ -387,22 +444,61 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                     String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
                     emit(emitStr);
                     return reg;
+                    
                 }else if (type == "boolean") {
                     type = "i1";
+                    String var = "%" + id;
+                    String reg = generateRegister();
+                    String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
+                    emit(emitStr);
+                    return reg;
 
-                }else if (type == "int[]"){
+                }else if (type == "int[]"){     //int array different load 
                     type = "i32*";
-                }else {
+                }else if (type == "boolean[]") {    //boolean array different load
                     type = "i8*";
-                } 
+                }else {
+                    this.messageSendClass = type;
+
+                    type = "i8*";
+                    String var = "%" + id;
+                    String reg = generateRegister();
+                    String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
+                    emit(emitStr);
+                    return reg;
+                }
                 
             } else {
+
+                if( type == "int") {
+
+                    
+                }else if (type == "boolean") {
+                    
+
+                }else if (type == "int[]"){     //int array different load 
+                    
+                }else if (type == "boolean[]") {    //boolean array different load
+                    
+                }else {
+                    this.messageSendClass = type;
+
+                }
                 //TO BE CONTINUED
             }
         }
         
 
         return id;
+    }
+
+     /**
+    * f0 -> "this"
+    */
+    public String visit(ThisExpression n, String argu) throws Exception {
+        this.messageSendClass = "this";
+        
+        return n.f0.accept(this, argu);
     }
 
     /**

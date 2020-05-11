@@ -95,6 +95,11 @@ public class VTable {
         return vinfo.fieldsVTable.get(field);
     }
 
+    public Integer findMethodOffset(String className, String methodName) {
+        VTableInfo vinfo = VTablesHMap.get(className);
+        return vinfo.methodsVTable.get(methodName);
+    }
+
     public Integer getSizeOfObj(String className, SymbolTable sTable) {
 
         if (!VTablesHMap.containsKey(className)) {
