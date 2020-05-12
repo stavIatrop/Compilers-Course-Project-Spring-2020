@@ -286,11 +286,18 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String exp;
         exp = n.f2.accept(this, argu);
         String[] labels = generateLabel("if");
-        String emiString;
+        String emitString = "\tbr i1 " + exp + ", label %" + labels[0] +", label %" + labels[1] + "\n\n";
+        emit(emitString);
+
+        emit(labels[0] + ":\n");
         n.f3.accept(this, argu);
         n.f4.accept(this, argu);
+        emit("\tbr label " + "%" + labels[2] + "\n\n");
         n.f5.accept(this, argu);
+        emit(labels[1] + ":\n");
         n.f6.accept(this, argu);
+        emit("\tbr label " + "%" + labels[2] + "\n\n");
+        emit(labels[2] + ":\n");
         return _ret;
     }
     /**
@@ -378,7 +385,6 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     * f5 -> ")"
     */
     public String visit(MessageSend n, String argu) throws Exception {
-        String _ret=null;
         String regPrimExp;
         regPrimExp = n.f0.accept(this, argu);
         String emitString;
@@ -652,6 +658,21 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f3.accept(this, argu);
         return regCalloc;
     }
+
+
+    /**
+    * f0 -> "("
+    * f1 -> Expression()
+    * f2 -> ")"
+    */
+    public String visit(BracketExpression n, String argu) throws Exception {
+        String exp;
+        n.f0.accept(this, argu);
+        exp = n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        return exp;
+    }
+
     /**
     * f0 -> <IDENTIFIER>
     */
@@ -761,9 +782,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     * f0 -> "this"
     */
     public String visit(ThisExpression n, String argu) throws Exception {
-        this.messageSendClass = "this";
-        
-        return n.f0.accept(this, argu);
+        this.messageSendClass = this.currentClass;
+        return "%this";
     }
 
     /**
@@ -820,8 +840,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String[] generateLabel(String exp){
         String[] labels = new String[3];
         if (exp == "if") {
-            labels[0] = "if_else_" + this.label.toString();
-            labels[1] = "if_then_" + this.label.toString();
+            labels[0] = "if_then_" + this.label.toString();
+            labels[1] = "if_else_" + this.label.toString();
             labels[2] = "if_end_" + this.label.toString();
         }
         this.label += 1;
