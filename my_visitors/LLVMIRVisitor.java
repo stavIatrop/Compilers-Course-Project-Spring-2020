@@ -224,7 +224,11 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f7.accept(this, argu);
         n.f8.accept(this, argu);
         n.f9.accept(this, argu);
-        n.f10.accept(this, argu);
+        String expType;
+        expType = n.f10.accept(this, argu);
+        emitStr = "\tret " + retType + " " + expType + "\n";
+        emit(emitStr);
+
         n.f11.accept(this, argu);
         n.f12.accept(this, argu);
         emitStr = "}\n\n";
@@ -497,6 +501,54 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return _ret;
     }
 
+    /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "+"
+    * f2 -> PrimaryExpression()
+    */
+    public String visit(PlusExpression n, String argu) throws Exception {
+        String priExp1 ,priExp2;
+        priExp1 = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        priExp2 = n.f2.accept(this, argu);
+        String regAdd = generateRegister();
+        String emitStr = "\t" + regAdd + " = add i32 " + priExp1 + ", " + priExp2 + "\n\n";
+        emit(emitStr);
+        return regAdd;
+    }
+
+    /**
+     * f0 -> PrimaryExpression()
+    * f1 -> "-"
+    * f2 -> PrimaryExpression()
+    */
+    public String visit(MinusExpression n, String argu) throws Exception {
+        String priExp1 ,priExp2;
+        priExp1 = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        priExp2 = n.f2.accept(this, argu);
+        String regMinus = generateRegister();
+        String emitStr = "\t" + regMinus + " = sub i32 " + priExp1 + ", " + priExp2 + "\n\n";
+        emit(emitStr);
+        return regMinus;
+    }
+
+    /**
+     * f0 -> PrimaryExpression()
+    * f1 -> "*"
+    * f2 -> PrimaryExpression()
+    */
+    public String visit(TimesExpression n, String argu) throws Exception {
+        String priExp1 ,priExp2;
+        priExp1 = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        priExp2 = n.f2.accept(this, argu);
+        String regMul = generateRegister();
+        String emitStr = "\t" + regMul + " = mul i32 " + priExp1 + ", " + priExp2 + "\n\n";
+        emit(emitStr);
+        return regMul;
+    }
+
 
     /**
     * f0 -> IntegerLiteral()
@@ -576,11 +628,32 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             if (scope == "class") {
 
                 Integer offset = vTables.findOffset(this.currentClass, id);
+                String emitStr;
                 if( type == "int") {
 
-                    
+                    String regGetElem = generateRegister();
+                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n\n";
+                    emit(emitStr);
+                    String regBitcast = generateRegister();
+                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i32*" + "\n\n";
+                    emit(emitStr);
+                    String regLoad = generateRegister();
+                    emitStr = "\t" + regLoad + " = load i32, i32* " + regBitcast + "\n\n";
+                    emit(emitStr);
+                    return regLoad;
+
                 }else if (type == "boolean") {
                     
+                    String regGetElem = generateRegister();
+                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i1 " + offset + "\n\n";
+                    emit(emitStr);
+                    String regBitcast = generateRegister();
+                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i1*" + "\n\n";
+                    emit(emitStr);
+                    String regLoad = generateRegister();
+                    emitStr = "\t" + regLoad + " = load i1, i1* " + regBitcast + "\n\n";
+                    emit(emitStr);
+                    return regLoad;
 
                 }else if (type == "int[]"){     //int array different load 
                     
@@ -588,7 +661,16 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                     
                 }else {
                     this.messageSendClass = type;
-
+                    String regGetElem = generateRegister();
+                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i8* " + offset + "\n\n";
+                    emit(emitStr);
+                    String regBitcast = generateRegister();
+                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i8**" + "\n\n";
+                    emit(emitStr);
+                    String regLoad = generateRegister();
+                    emitStr = "\t" + regLoad + " = load i8*, i8** " + regBitcast + "\n\n";
+                    emit(emitStr);
+                    return regLoad;
                 }
                 //TO BE CONTINUED
 
