@@ -305,7 +305,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
             Integer offset = vTables.findOffset(this.currentClass, id);
             String regGetElem = generateRegister();
-            emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, " + type + " " + offset + "\n\n";
+            emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, " + type + " " + offset + "\n";
             emit(emitStr);
             String regBitcast = generateRegister();
             emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to " + type + "*" + "\n\n";
@@ -632,10 +632,10 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                 if( type == "int") {
 
                     String regGetElem = generateRegister();
-                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n\n";
+                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
                     emit(emitStr);
                     String regBitcast = generateRegister();
-                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i32*" + "\n\n";
+                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i32*" + "\n";
                     emit(emitStr);
                     String regLoad = generateRegister();
                     emitStr = "\t" + regLoad + " = load i32, i32* " + regBitcast + "\n\n";
@@ -645,10 +645,10 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                 }else if (type == "boolean") {
                     
                     String regGetElem = generateRegister();
-                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i1 " + offset + "\n\n";
+                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i1 " + offset + "\n";
                     emit(emitStr);
                     String regBitcast = generateRegister();
-                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i1*" + "\n\n";
+                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i1*" + "\n";
                     emit(emitStr);
                     String regLoad = generateRegister();
                     emitStr = "\t" + regLoad + " = load i1, i1* " + regBitcast + "\n\n";
@@ -662,10 +662,10 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                 }else {
                     this.messageSendClass = type;
                     String regGetElem = generateRegister();
-                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i8* " + offset + "\n\n";
+                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i8* " + offset + "\n";
                     emit(emitStr);
                     String regBitcast = generateRegister();
-                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i8**" + "\n\n";
+                    emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i8**" + "\n";
                     emit(emitStr);
                     String regLoad = generateRegister();
                     emitStr = "\t" + regLoad + " = load i8*, i8** " + regBitcast + "\n\n";

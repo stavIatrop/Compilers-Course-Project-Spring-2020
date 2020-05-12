@@ -24,16 +24,25 @@ public class VTable {
             PrintWriter pw = new PrintWriter(fw);
             ArrayList<String> classKeys = new ArrayList<String>(VTablesHMap.keySet());
             Collections.reverse(classKeys);
+            
             for (String classStr : classKeys) {
                 
+                
+
                 VTableInfo vInfo = VTablesHMap.get(classStr);
                 Integer numMethods = vInfo.methodsVTable.size();
                 pw.printf("@.%s_vtable = global [%d x i8*] [", classStr, numMethods);
                 if (numMethods != 0) {
                     pw.print("\n");
                 }
+                boolean flag = false;
                 for (String methodStr : vInfo.methodsVTable.keySet() ) {
                                         
+                    if (flag) {
+                        pw.print(",\n");
+                    }else {
+                        flag = true;
+                    }
                     String[] parentName = new String[1];
                     parentName[0] = "";
                     FunInfo finfo = sTable.lookupMethod(classStr, methodStr, parentName);
@@ -69,13 +78,14 @@ public class VTable {
                     }
                     argsString = "i8*" + argsString;
                     if (parentName[0] == "") {
-                        pw.printf("\ti8* bitcast (%s (%s)* @%s.%s to i8*),\n", retType, argsString, classStr, methodStr);   
+                        pw.printf("\ti8* bitcast (%s (%s)* @%s.%s to i8*)", retType, argsString, classStr, methodStr);   
                     }else {
-                        pw.printf("\ti8* bitcast (%s (%s)* @%s.%s to i8*),\n", retType, argsString, parentName[0], methodStr);
+                        pw.printf("\ti8* bitcast (%s (%s)* @%s.%s to i8*)", retType, argsString, parentName[0], methodStr);
 
                     }
+                    
                 }
-                pw.print("]\n\n");
+                pw.print("\n]\n\n");
             }
             
             String text = new String(Files.readAllBytes(Paths.get("boilerplateCode.ll")), StandardCharsets.UTF_8);
