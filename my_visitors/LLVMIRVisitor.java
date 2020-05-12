@@ -22,6 +22,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String currentMethod;
     public boolean classVar;
     public Integer register;
+    public Integer label;
     public boolean primaryExp;
     public String messageSendClass;
     ArrayList<String> methodParams = new ArrayList<String>();
@@ -31,6 +32,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         this.vTables = vtables;
         this.LLVMfile = file;
         this.register = 0;
+        this.label = 0;
         this.primaryExp = false;
         this.messageSendClass = "";
     }
@@ -152,6 +154,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String visit(MethodDeclaration n, String argu) throws Exception {
 
         this.register = 0;
+        this.label = 0;
         String _ret=null;
         n.f0.accept(this, argu);
         String retType;
@@ -266,6 +269,30 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return _ret;
     }
 
+
+    /**
+    * f0 -> "if"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> Statement()
+    * f5 -> "else"
+    * f6 -> Statement()
+    */
+    public String visit(IfStatement n, String argu) throws Exception {
+        String _ret=null;
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        String exp;
+        exp = n.f2.accept(this, argu);
+        String[] labels = generateLabel("if");
+        String emiString;
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        n.f5.accept(this, argu);
+        n.f6.accept(this, argu);
+        return _ret;
+    }
     /**
     * f0 -> Identifier()
     * f1 -> "="
@@ -325,6 +352,22 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return _ret;
     }
 
+
+    /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "<"
+    * f2 -> PrimaryExpression()
+    */
+    public String visit(CompareExpression n, String argu) throws Exception {
+        String priExp1, priExp2;
+        priExp1 = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        priExp2 = n.f2.accept(this, argu);
+        String regCmp = generateRegister();
+        String emitStr = "\t" + regCmp + " = icmp slt i32 " + priExp1 + ", " + priExp2 + "\n";
+        emit(emitStr);
+        return regCmp;
+    }
 
     /**
     * f0 -> PrimaryExpression()
@@ -774,7 +817,14 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return reg;
     }
 
-    public String generateLabel(){
-        return null;
+    public String[] generateLabel(String exp){
+        String[] labels = new String[3];
+        if (exp == "if") {
+            labels[0] = "if_else_" + this.label.toString();
+            labels[1] = "if_then_" + this.label.toString();
+            labels[2] = "if_end_" + this.label.toString();
+        }
+        this.label += 1;
+        return labels;
     }
 }
