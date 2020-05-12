@@ -92,7 +92,7 @@ public class VTable {
     public Integer findOffset(String className, String field) {
 
         VTableInfo vinfo = VTablesHMap.get(className);
-        return vinfo.fieldsVTable.get(field);
+        return vinfo.fieldsVTable.get(field) + 8; //plus 8 because of the v-table pointer
     }
 
     public Integer findMethodOffset(String className, String methodName) {
