@@ -598,6 +598,21 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return regMul;
     }
 
+    /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "["
+    * f2 -> PrimaryExpression()
+    * f3 -> "]"
+    */
+    public String visit(ArrayLookup n, String argu) throws Exception {
+        String _ret=null;
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        n.f3.accept(this, argu);
+        return _ret;
+    }
+
 
     /**
     * f0 -> IntegerLiteral()
@@ -614,6 +629,64 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String primExp = n.f0.accept(this, argu);
         this.primaryExp = false;
         return primExp;
+    }
+
+    /**
+    * f0 -> "new"
+    * f1 -> "boolean"
+    * f2 -> "["
+    * f3 -> Expression()
+    * f4 -> "]"
+    */
+    public String visit(BooleanArrayAllocationExpression n, String argu) throws Exception {
+        String _ret=null;
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        return _ret;
+    }
+
+    /**
+     * f0 -> "new"
+    * f1 -> "int"
+    * f2 -> "["
+    * f3 -> Expression()
+    * f4 -> "]"
+    */
+    public String visit(IntegerArrayAllocationExpression n, String argu) throws Exception {
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        String exp;
+        String regAdd = generateRegister();
+        
+        exp = n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        String emitString = "\t" + regAdd + " = add i32 1, " + exp + "\n";
+        emit(emitString);
+
+        String regCmp = generateRegister();
+        emitString = "\t" + regCmp + " = icmp sge i32 " + regAdd + ", 1\n";
+        emit(emitString);
+        String[] labels = generateLabel("nsz");
+        emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+        emit(emitString);
+        
+        emit(labels[0] + ":\n");
+        emit("\tcall void @throw_nsz()\n" +
+                "\tbr label %" + labels[1] + "\n\n");
+        emit(labels[1] + ":\n");
+        String regAlloc = generateRegister();
+        emitString = "\t" + regAlloc + " = call i8* @calloc(i32 " + regAdd + ", i32 4)\n";
+        emit(emitString);
+        String regBitcast = generateRegister();
+        emitString = "\t" + regBitcast + " = bitcast i8* " + regAlloc + " to i32*\n";
+        emit(emitString);
+        emitString = "\tstore i32 " + exp + ", i32* " + regBitcast + "\n\n";
+        emit(emitString); 
+        return regBitcast;
     }
 
     /**
@@ -758,6 +831,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
                 }else if (type == "int[]"){     //int array different load 
                     type = "i32*";
+                    
                 }else if (type == "boolean[]") {    //boolean array different load
                     type = "i8*";
                 }else {
@@ -843,6 +917,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             labels[0] = "if_then_" + this.label.toString();
             labels[1] = "if_else_" + this.label.toString();
             labels[2] = "if_end_" + this.label.toString();
+        }else if (exp == "nsz") {
+            labels[0] = "nsz_err_" + this.label;
+            labels[1] = "nsz_ok_" + this.label;
         }
         this.label += 1;
         return labels;
