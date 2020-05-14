@@ -351,7 +351,11 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             var = "%" + id;
         }
 
-        
+        if (exp == "true") {
+            exp = "1";
+        }else {
+            exp = "0";
+        }
         emitStr = "\tstore " + type + " " + exp + ", " + type + "* " + var + "\n\n";
         if (!emit(emitStr)) {
             throw new Exception("Something went wrong while compiling assignment statement of " + id + " variable");
@@ -360,7 +364,51 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return _ret;
     }
 
+    /**
+    * f0 -> Clause()
+    * f1 -> "&&"
+    * f2 -> Clause()
+    */
+    public String visit(AndExpression n, String argu) throws Exception {
+        String clause1, clause2;
+        clause1 = n.f0.accept(this, argu);
+        //Check first if clause1 is false
+        String[] labels = generateLabel("and");
+        String emitString = "\tbr i1 " + clause1 + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+        emit(emitString);
+        
+        emit(labels[0]  + ":\n" +
+            "\tbr label %" + labels[2] + "\n\n" + 
+            labels[1] + ":\n");
 
+        n.f1.accept(this, argu);
+        clause2 = n.f2.accept(this, argu);
+
+        emit("\tbr label %" + labels[2] + "\n\n" +
+            labels[2]  + ":\n" +
+            "\tbr label %" + labels[3] + "\n\n" + 
+            labels[3] + ":\n");
+        
+        String regPhi = generateRegister();
+        emitString = "\t" + regPhi + " = phi i1  [ 0, %" + labels[0] + " ], [ " + clause2 + ", %" + labels[2] + " ]\n\n";  
+        emit(emitString);
+
+        return regPhi;
+    }
+
+    /**
+    * f0 -> "!"
+    * f1 -> Clause()
+    */
+    public String visit(NotExpression n, String argu) throws Exception {
+        n.f0.accept(this, argu);
+        String clause;
+        clause = n.f1.accept(this, argu);
+        String regXor = generateRegister();
+        String emitString = "\t" + regXor + " = xor i1 1, " + clause + "\n";
+        emit(emitString);
+        return regXor;
+    }
     /**
     * f0 -> PrimaryExpression()
     * f1 -> "<"
@@ -1075,17 +1123,31 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     }
 
     public String[] generateLabel(String exp){
-        String[] labels = new String[3];
+        
+        String[] labels = null;
+
         if (exp == "if") {
+            labels = new String[3];
             labels[0] = "if_then_" + this.label.toString();
             labels[1] = "if_else_" + this.label.toString();
             labels[2] = "if_end_" + this.label.toString();
         }else if (exp == "nsz") {
+            labels = new String[2];
             labels[0] = "nsz_err_" + this.label;
             labels[1] = "nsz_ok_" + this.label;
         }else if ( exp == "oob") {
+            labels = new String[2];
             labels[0] = "oob_err_" + this.label.toString();
             labels[1] = "oob_ok_"  + this.label.toString();
+        }else if ( exp == "and") {
+            labels = new String[4];
+            labels[0] = "and_clause_" + this.label.toString();
+            this.label += 1;
+            labels[1] = "and_clause_" + this.label.toString();
+            this.label += 1;
+            labels[2] = "and_clause_" + this.label.toString();
+            this.label += 1;
+            labels[3] = "and_clause_" + this.label.toString();
         }
         this.label += 1;
         return labels;
