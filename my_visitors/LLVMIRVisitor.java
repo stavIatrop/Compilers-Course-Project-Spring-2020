@@ -353,7 +353,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
         if (exp == "true") {
             exp = "1";
-        }else {
+        }else if (exp == "false"){
             exp = "0";
         }
         emitStr = "\tstore " + type + " " + exp + ", " + type + "* " + var + "\n\n";
