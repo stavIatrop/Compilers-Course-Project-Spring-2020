@@ -771,15 +771,16 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         if ( scope == "class") {
             Integer offset = vTables.findOffset(this.currentClass, id);
             String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelemtptr i8, i8* %this, i32 " + offset + "\n";
+            emitString = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
             emit(emitString);
 
             String regBitcast = generateRegister();
         
-            emitString = "\t" + regBitcast + " = i8* " + regGetElem + " to " + type + "**\n\n";
+            emitString = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to " + type + "**\n\n";
             emit(emitString);
             regLoad = generateRegister();
             emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + regBitcast + "\n";
+            emit(emitString);
         }else {
             regLoad = generateRegister();
             emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + "%" + id + "\n";
