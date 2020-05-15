@@ -1,6 +1,4 @@
-package examples;
-
-public class Boolean_arrays {
+class Boolean_arrays {
     
     public static void main(String[] args) {
         

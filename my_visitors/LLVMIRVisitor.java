@@ -206,8 +206,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                     emitStr = "\t%" + arg + " = alloca " + "i32\n";
                     emitStr = emitStr + "\tstore i32 %." + arg + ", i32* %" + arg + "\n\n";
                 }else if (type == "boolean") {
-                    emitStr = "\t%" + arg + " = alloca " + "ii\n";
-                    emitStr = emitStr + "\tstore ii %." + arg + ", ii* %" + arg + "\n\n";
+                    emitStr = "\t%" + arg + " = alloca " + "i1\n";
+                    emitStr = emitStr + "\tstore i1 %." + arg + ", i1* %" + arg + "\n\n";
                 }else if (type == "int[]") {
                     emitStr = "\t%" + arg + " = alloca " + "i32*\n";
                     emitStr = emitStr + "\tstore i32* %." + arg + ", i32** %" + arg + "\n\n";
@@ -230,6 +230,11 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f9.accept(this, argu);
         String expType;
         expType = n.f10.accept(this, argu);
+        // if (expType == "true") {
+        //     expType = "1";
+        // }else if (expType == "false") {
+        //     expType = "0";
+        // }
         emitStr = "\tret " + retType + " " + expType + "\n";
         emit(emitStr);
 
@@ -340,7 +345,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
             Integer offset = vTables.findOffset(this.currentClass, id);
             String regGetElem = generateRegister();
-            emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, " + type + " " + offset + "\n";
+            emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
             emit(emitStr);
             String regBitcast = generateRegister();
             emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to " + type + "*" + "\n\n";
@@ -351,11 +356,11 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             var = "%" + id;
         }
 
-        if (exp == "true") {
-            exp = "1";
-        }else if (exp == "false"){
-            exp = "0";
-        }
+        // if (exp == "true") {
+        //     exp = "1";
+        // }else if (exp == "false"){
+        //     exp = "0";
+        // }
         emitStr = "\tstore " + type + " " + exp + ", " + type + "* " + var + "\n\n";
         if (!emit(emitStr)) {
             throw new Exception("Something went wrong while compiling assignment statement of " + id + " variable");
@@ -999,12 +1004,12 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                     emit(emitStr);
                     return regLoad;
 
-                }else if (type == "boolean[]") {    //boolean array different load
+                }else if (type == "boolean[]") {    //boolean array different load, NOT COMPLETED
                     
                 }else {
                     this.messageSendClass = type;
                     String regGetElem = generateRegister();
-                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i8* " + offset + "\n";
+                    emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
                     emit(emitStr);
                     String regBitcast = generateRegister();
                     emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i8**" + "\n";
@@ -1069,6 +1074,20 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String visit(ThisExpression n, String argu) throws Exception {
         this.messageSendClass = this.currentClass;
         return "%this";
+    }
+
+    /**
+    * f0 -> "true"
+    */
+    public String visit(TrueLiteral n, String argu) throws Exception {
+        return "1";
+    }
+
+    /**
+     * f0 -> "false"
+    */
+    public String visit(FalseLiteral n, String argu) throws Exception {
+        return "0";
     }
 
     /**

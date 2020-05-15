@@ -107,7 +107,8 @@ public class VTable {
 
     public Integer findMethodOffset(String className, String methodName) {
         VTableInfo vinfo = VTablesHMap.get(className);
-        return vinfo.methodsVTable.get(methodName);
+        Integer offset = vinfo.methodsVTable.get(methodName) / 8;  
+        return offset;
     }
 
     public Integer getSizeOfObj(String className, SymbolTable sTable) {
