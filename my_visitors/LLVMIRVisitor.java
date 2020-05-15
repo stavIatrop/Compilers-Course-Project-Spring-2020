@@ -277,6 +277,32 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
 
     /**
+    * f0 -> "while"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> Statement()
+    */
+    public String visit(WhileStatement n, String argu) throws Exception {
+        String _ret=null;
+        String[] labels = generateLabel("while");
+        emit("\tbr label %" + labels[0] + "\n\n");
+        emit(labels[0] + ":\n");
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        String exp;
+        exp = n.f2.accept(this, argu);
+        String emitString = "\tbr i1 " + exp + ", label %" + labels[1] +  ", label %" + labels[2] + "\n\n";
+        emit(emitString);
+        emit(labels[1] + ":\n");
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        emit("\tbr label %" + labels[0] + "\n\n" + 
+            labels[2] + ":\n");
+        return _ret;
+    }
+
+    /**
     * f0 -> "if"
     * f1 -> "("
     * f2 -> Expression()
@@ -1167,6 +1193,13 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             labels[2] = "and_clause_" + this.label.toString();
             this.label += 1;
             labels[3] = "and_clause_" + this.label.toString();
+        } else if ( exp == "while") {
+            labels = new String[3];
+            labels[0] = "loop" + this.label.toString();
+            this.label += 1;
+            labels[1] = "loop" + this.label.toString();
+            this.label += 1;
+            labels[2] = "loop" + this.label.toString();
         }
         this.label += 1;
         return labels;
