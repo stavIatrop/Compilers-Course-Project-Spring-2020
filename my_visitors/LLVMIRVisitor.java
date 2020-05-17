@@ -600,12 +600,12 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         clause1 = n.f0.accept(this, argu);
         //Check first if clause1 is false
         String[] labels = generateLabel("and");
-        String emitString = "\tbr i1 " + clause1 + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+        emit("\tbr label %" + labels[0] + "\n\n" +
+            labels[0] + ":\n");
+        String emitString = "\tbr i1 " + clause1 + ", label %" + labels[1] + ", label %" + labels[2] + "\n\n";
         emit(emitString);
         
-        emit(labels[0]  + ":\n" +
-            "\tbr label %" + labels[2] + "\n\n" + 
-            labels[1] + ":\n");
+        emit(labels[1]  + ":\n");
 
         n.f1.accept(this, argu);
         clause2 = n.f2.accept(this, argu);
