@@ -800,6 +800,39 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         
     }
 
+    /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "."
+    * f2 -> "length"
+    */
+    public String visit(ArrayLength n, String argu) throws Exception {
+        String priExp;
+
+        priExp = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+
+        String type = this.registerTypes.get(priExp);
+        if (type == "int[]") {
+
+            String regSizeArray = generateRegister();
+            String emitString;
+            emitString = "\t" + regSizeArray + " = load i32, i32* " + priExp + "\n";
+            emit(emitString);
+            return regSizeArray;
+        }else {
+            
+            String regBitcast = generateRegister();
+            String emitString;
+            emitString = "\t" + regBitcast + " = bitcast i8* " + priExp + " to i32*\n";
+            emit(emitString);
+
+            String regSizeArray = generateRegister();
+            emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
+            emit(emitString);
+            return regSizeArray;
+        }
+    }
 
     /**
     * f0 -> Identifier()

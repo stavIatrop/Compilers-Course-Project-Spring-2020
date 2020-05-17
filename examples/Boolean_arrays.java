@@ -3,8 +3,9 @@ class Boolean_arrays {
     public static void main(String[] args) {
         
         boolean[] k;
-        
+        int[] l;
 
+        l = new int[34];
         k = new boolean[2];
         k[0] = true;
         k[1] = false;
@@ -13,7 +14,7 @@ class Boolean_arrays {
             System.out.println(1);
 
         }else {
-            System.out.println(0);
+            System.out.println(l.length);
         }
         
     }
