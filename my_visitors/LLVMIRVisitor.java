@@ -782,6 +782,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + regBitcast + "\n";
             emit(emitString);
         }else {
+
             regLoad = generateRegister();
             emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + "%" + id + "\n";
             emit(emitString);
@@ -796,42 +797,94 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         exp = n.f5.accept(this, argu);
         n.f6.accept(this, argu);
 
-        String regSizeArray = generateRegister();
-        emitString = "\t" + regSizeArray + " = load i32, " + type + "* " + regLoad + "\n";
-        emit(emitString);
+        if (type == "i32") {
 
-        String regCheckGEZero = generateRegister();
-        emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
-        emit(emitString);
+            String regSizeArray = generateRegister();
+            emitString = "\t" + regSizeArray + " = load i32, " + type + "* " + regLoad + "\n";
+            emit(emitString);
 
-        String regCheckLTSize = generateRegister();
-        emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
-        emit(emitString);
+            String regCheckGEZero = generateRegister();
+            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
+            emit(emitString);
 
+            String regCheckLTSize = generateRegister();
+            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
+            emit(emitString);
+
+            
+            String regAnd = generateRegister();
+            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
+            emit(emitString);
+
+            String[] labels = generateLabel("oob");
+            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+            emit(emitString);
+
+            emit(labels[0] + ":\n" +
+                "\tcall void @throw_oob()\n" +
+                "\tbr label %" + labels[1] + "\n\n" +
+                labels[1] + ":\n");
+            
+            String regIndex = generateRegister();
+            emitString = "\t" + regIndex + " = add i32 1, " + expIndex + "\n";
+            emit(emitString);
+
+            String regGetElem = generateRegister();
+            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
+            emit(emitString); 
+
+            emitString = "\tstore " + type + " " + exp + ", " + type + "* " + regGetElem + "\n\n";
+            emit(emitString);
+
+        }else {
+
+            String regBitcast = generateRegister();
+            emitString = "\t" + regBitcast + " = bitcast i8* " + regLoad + " to i32*\n";
+            emit(emitString);
+
+            String regSizeArray = generateRegister();
+            emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
+            emit(emitString);
+
+            String regCheckGEZero = generateRegister();
+            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
+            emit(emitString);
+
+            String regCheckLTSize = generateRegister();
+            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
+            emit(emitString);
+
+            
+            String regAnd = generateRegister();
+            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
+            emit(emitString);
+
+            String[] labels = generateLabel("oob");
+            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+            emit(emitString);
+
+            emit(labels[0] + ":\n" +
+                "\tcall void @throw_oob()\n" +
+                "\tbr label %" + labels[1] + "\n\n" +
+                labels[1] + ":\n");
+            
+            String regIndex = generateRegister();
+            emitString = "\t" + regIndex + " = add i32 4, " + expIndex + "\n";
+            emit(emitString);
+
+            String regGetElem = generateRegister();
+            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
+            emit(emitString); 
+
+            String regZext = generateRegister();
+            emitString = "\t" + regZext + " = zext i1 " + exp + " to i8\n";
+            emit(emitString);
+
+            emitString = "\tstore " + type + " " + regZext + ", " + type + "* " + regGetElem + "\n\n";
+            emit(emitString);
+
+        }
         
-        String regAnd = generateRegister();
-        emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-        emit(emitString);
-
-        String[] labels = generateLabel("oob");
-        emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-        emit(emitString);
-
-        emit(labels[0] + ":\n" +
-            "\tcall void @throw_oob()\n" +
-            "\tbr label %" + labels[1] + "\n\n" +
-            labels[1] + ":\n");
-        
-        String regIndex = generateRegister();
-        emitString = "\t" + regIndex + " = add i32 1, " + expIndex + "\n";
-        emit(emitString);
-
-        String regGetElem = generateRegister();
-        emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
-        emit(emitString); 
-
-        emitString = "\tstore " + type + " " + exp + ", " + type + "* " + regGetElem + "\n\n";
-        emit(emitString);
 
         return null;
     }
@@ -862,13 +915,46 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     * f4 -> "]"
     */
     public String visit(BooleanArrayAllocationExpression n, String argu) throws Exception {
-        String _ret=null;
         n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         n.f2.accept(this, argu);
-        n.f3.accept(this, argu);
+        String size;
+        size =  n.f3.accept(this, argu);
         n.f4.accept(this, argu);
-        return _ret;
+        //size plus 4 bytes to store the size of the array
+        String emitString;
+        String regAdd = generateRegister();
+        emitString = "\t" + regAdd + " = add i32 4, " + size + "\n";
+        emit(emitString);
+        String regCmp = generateRegister();
+        emitString = "\t" + regCmp + " = icmp sge i32 " + regAdd + ", 4\n";
+        emit(emitString);
+
+        String[] labels = generateLabel("nsz");
+        emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+        emit(emitString);
+
+        emit(labels[0] + ":\n" +
+            "\tcall void @throw_nsz()\n" +
+            "\tbr label %" + labels[1] + "\n\n");
+        emit(labels[1] + ":\n");
+
+        String regCalloc = generateRegister();
+        emitString = "\t" + regCalloc + " = call i8* @calloc(i32 " + regAdd + ", i32 1)\n";
+        emit(emitString);
+        
+        //bitcast to i32* to store the size in first 4 bytes
+        String regBitcast1 = generateRegister();
+        emitString = "\t" + regBitcast1 + " = bitcast i8* " + regCalloc + " to i32*\n";
+        emit(emitString);
+
+        emitString = "\tstore i32 " + size + ", i32* " + regBitcast1 + "\n";
+        emit(emitString);
+        //bitcast to i8* and return pointer
+        String regBitcast2 = generateRegister();
+        emitString = "\t" + regBitcast2 + " = bitcast i32* " + regBitcast1 + " to i8*\n\n";     //may not needed and return just regCalloc
+        emit(emitString);
+        return regBitcast2;
     }
 
     /**
@@ -897,8 +983,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
         emit(emitString);
         
-        emit(labels[0] + ":\n");
-        emit("\tcall void @throw_nsz()\n" +
+        emit(labels[0] + ":\n" +
+            "\tcall void @throw_nsz()\n" +
                 "\tbr label %" + labels[1] + "\n\n");
         emit(labels[1] + ":\n");
         String regAlloc = generateRegister();
