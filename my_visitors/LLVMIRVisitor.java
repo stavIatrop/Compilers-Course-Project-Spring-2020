@@ -38,6 +38,11 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         this.messageSendClass = "";
     }
 
+
+    public String visit(NodeToken n, String argu) {   
+        return n.toString(); 
+    }
+
     /**
     * f0 -> "class"
     * f1 -> Identifier()
@@ -136,6 +141,36 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return _ret;
     }
 
+
+    /**
+    * f0 -> Type()
+    * f1 -> Identifier()
+    * f2 -> ";"
+    */
+    public String visit(VarDeclaration n, String argu) throws Exception {
+        String _ret=null;
+        String type, id;
+        type = n.f0.accept(this, argu);
+        id = n.f1.accept(this, argu);
+        if (!this.classVar) {       //if it is a local variable, allocate memory on the stack
+            if (type == "int") {
+                type = "i32";
+            }else if (type == "boolean"){
+                type = "i1";
+            }else if (type == "int[]"){
+                type = "i32*";
+            }else {
+                type = "i8*";
+            }
+            String emitStr;
+            emitStr = "\t%" + id + " = alloca " + type + "\n\n";
+            if (!emit(emitStr)){
+                throw new Exception("Something went wrong while declaring " + id + ".");
+            }
+        }
+        n.f2.accept(this, argu);
+        return _ret;
+    }
 
     /**
     * f0 -> "public"
@@ -245,93 +280,26 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return _ret;
     }
 
-    /**
-    * f0 -> Type()
-    * f1 -> Identifier()
-    * f2 -> ";"
-    */
-    public String visit(VarDeclaration n, String argu) throws Exception {
-        String _ret=null;
-        String type, id;
-        type = n.f0.accept(this, argu);
-        id = n.f1.accept(this, argu);
-        if (!this.classVar) {       //if it is a local variable, allocate memory on the stack
-            if (type == "int") {
-                type = "i32";
-            }else if (type == "boolean"){
-                type = "i1";
-            }else if (type == "int[]"){
-                type = "i32*";
-            }else {
-                type = "i8*";
-            }
-            String emitStr;
-            emitStr = "\t%" + id + " = alloca " + type + "\n\n";
-            if (!emit(emitStr)){
-                throw new Exception("Something went wrong while declaring " + id + ".");
-            }
-        }
-        n.f2.accept(this, argu);
-        return _ret;
-    }
-
 
     /**
-    * f0 -> "while"
-    * f1 -> "("
-    * f2 -> Expression()
-    * f3 -> ")"
-    * f4 -> Statement()
+    * f0 -> "boolean"
+    * f1 -> "["
+    * f2 -> "]"
     */
-    public String visit(WhileStatement n, String argu) throws Exception {
-        String _ret=null;
-        String[] labels = generateLabel("while");
-        emit("\tbr label %" + labels[0] + "\n\n");
-        emit(labels[0] + ":\n");
-        n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        String exp;
-        exp = n.f2.accept(this, argu);
-        String emitString = "\tbr i1 " + exp + ", label %" + labels[1] +  ", label %" + labels[2] + "\n\n";
-        emit(emitString);
-        emit(labels[1] + ":\n");
-        n.f3.accept(this, argu);
-        n.f4.accept(this, argu);
-        emit("\tbr label %" + labels[0] + "\n\n" + 
-            labels[2] + ":\n");
-        return _ret;
-    }
+    public String visit(BooleanArrayType n, String argu) {
+        return "boolean[]";
+    } 
 
     /**
-    * f0 -> "if"
-    * f1 -> "("
-    * f2 -> Expression()
-    * f3 -> ")"
-    * f4 -> Statement()
-    * f5 -> "else"
-    * f6 -> Statement()
+     * f0 -> "int"
+    * f1 -> "["
+    * f2 -> "]"
     */
-    public String visit(IfStatement n, String argu) throws Exception {
-        String _ret=null;
-        n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        String exp;
-        exp = n.f2.accept(this, argu);
-        String[] labels = generateLabel("if");
-        String emitString = "\tbr i1 " + exp + ", label %" + labels[0] +", label %" + labels[1] + "\n\n";
-        emit(emitString);
-
-        emit(labels[0] + ":\n");
-        n.f3.accept(this, argu);
-        n.f4.accept(this, argu);
-        emit("\tbr label " + "%" + labels[2] + "\n\n");
-        n.f5.accept(this, argu);
-        emit(labels[1] + ":\n");
-        n.f6.accept(this, argu);
-        emit("\tbr label " + "%" + labels[2] + "\n\n");
-        emit(labels[2] + ":\n");
-        return _ret;
+    public String visit(IntegerArrayType n, String argu) throws Exception{
+        return "int[]";
     }
+
+    
     /**
     * f0 -> Identifier()
     * f1 -> "="
@@ -396,6 +364,233 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     }
 
     /**
+    * f0 -> Identifier()
+    * f1 -> "["
+    * f2 -> Expression()
+    * f3 -> "]"
+    * f4 -> "="
+    * f5 -> Expression()
+    * f6 -> ";"
+    */
+    public String visit(ArrayAssignmentStatement n, String argu) throws Exception {
+        String id;
+        id = n.f0.accept(this, argu);
+        String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
+        if (ret == null) {
+            throw new Exception("Name " + id + " is not declared.");
+        }
+        String type = ret[0];
+        if (type == "int[]") {
+            type = "i32";
+        }else {                 //NEEDS EXTRA CODE FOR BOOLEAN ARRAYS
+            type = "i8";
+        }
+        String scope = ret[1];
+        String regLoad;
+        String emitString;
+        if ( scope == "class") {
+            Integer offset = vTables.findOffset(this.currentClass, id);
+            String regGetElem = generateRegister();
+            emitString = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
+            emit(emitString);
+
+            String regBitcast = generateRegister();
+        
+            emitString = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to " + type + "**\n\n";
+            emit(emitString);
+            regLoad = generateRegister();
+            emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + regBitcast + "\n";
+            emit(emitString);
+        }else {
+
+            regLoad = generateRegister();
+            emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + "%" + id + "\n";
+            emit(emitString);
+        }
+
+        String expIndex, exp;
+
+        n.f1.accept(this, argu);
+        expIndex = n.f2.accept(this, argu);
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        exp = n.f5.accept(this, argu);
+        n.f6.accept(this, argu);
+
+        if (type == "i32") {
+
+            String regSizeArray = generateRegister();
+            emitString = "\t" + regSizeArray + " = load i32, " + type + "* " + regLoad + "\n";
+            emit(emitString);
+
+            String regCheckGEZero = generateRegister();
+            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
+            emit(emitString);
+
+            String regCheckLTSize = generateRegister();
+            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
+            emit(emitString);
+
+            
+            String regAnd = generateRegister();
+            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
+            emit(emitString);
+
+            String[] labels = generateLabel("oob");
+            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+            emit(emitString);
+
+            emit(labels[0] + ":\n" +
+                "\tcall void @throw_oob()\n" +
+                "\tbr label %" + labels[1] + "\n\n" +
+                labels[1] + ":\n");
+            
+            String regIndex = generateRegister();
+            emitString = "\t" + regIndex + " = add i32 1, " + expIndex + "\n";
+            emit(emitString);
+
+            String regGetElem = generateRegister();
+            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
+            emit(emitString); 
+
+            emitString = "\tstore " + type + " " + exp + ", " + type + "* " + regGetElem + "\n\n";
+            emit(emitString);
+
+        }else {
+
+            String regBitcast = generateRegister();
+            emitString = "\t" + regBitcast + " = bitcast i8* " + regLoad + " to i32*\n";
+            emit(emitString);
+
+            String regSizeArray = generateRegister();
+            emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
+            emit(emitString);
+
+            String regCheckGEZero = generateRegister();
+            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
+            emit(emitString);
+
+            String regCheckLTSize = generateRegister();
+            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
+            emit(emitString);
+
+            
+            String regAnd = generateRegister();
+            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
+            emit(emitString);
+
+            String[] labels = generateLabel("oob");
+            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+            emit(emitString);
+
+            emit(labels[0] + ":\n" +
+                "\tcall void @throw_oob()\n" +
+                "\tbr label %" + labels[1] + "\n\n" +
+                labels[1] + ":\n");
+            
+            String regIndex = generateRegister();
+            emitString = "\t" + regIndex + " = add i32 4, " + expIndex + "\n";
+            emit(emitString);
+
+            String regGetElem = generateRegister();
+            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
+            emit(emitString); 
+
+            String regZext = generateRegister();
+            emitString = "\t" + regZext + " = zext i1 " + exp + " to i8\n";
+            emit(emitString);
+
+            emitString = "\tstore " + type + " " + regZext + ", " + type + "* " + regGetElem + "\n\n";
+            emit(emitString);
+
+        }
+        
+
+        return null;
+    }
+
+    /**
+    * f0 -> "if"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> Statement()
+    * f5 -> "else"
+    * f6 -> Statement()
+    */
+    public String visit(IfStatement n, String argu) throws Exception {
+        String _ret=null;
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        String exp;
+        exp = n.f2.accept(this, argu);
+        String[] labels = generateLabel("if");
+        String emitString = "\tbr i1 " + exp + ", label %" + labels[0] +", label %" + labels[1] + "\n\n";
+        emit(emitString);
+
+        emit(labels[0] + ":\n");
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        emit("\tbr label " + "%" + labels[2] + "\n\n");
+        n.f5.accept(this, argu);
+        emit(labels[1] + ":\n");
+        n.f6.accept(this, argu);
+        emit("\tbr label " + "%" + labels[2] + "\n\n");
+        emit(labels[2] + ":\n");
+        return _ret;
+    }
+    
+
+    /**
+    * f0 -> "while"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> Statement()
+    */
+    public String visit(WhileStatement n, String argu) throws Exception {
+        String _ret=null;
+        String[] labels = generateLabel("while");
+        emit("\tbr label %" + labels[0] + "\n\n");
+        emit(labels[0] + ":\n");
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        String exp;
+        exp = n.f2.accept(this, argu);
+        String emitString = "\tbr i1 " + exp + ", label %" + labels[1] +  ", label %" + labels[2] + "\n\n";
+        emit(emitString);
+        emit(labels[1] + ":\n");
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        emit("\tbr label %" + labels[0] + "\n\n" + 
+            labels[2] + ":\n");
+        return _ret;
+    }
+
+    
+    /**
+    * f0 -> "System.out.println"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> ";"
+    */
+    public String visit(PrintStatement n, String argu) throws Exception {
+        String _ret=null;
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        String exp;
+        exp = n.f2.accept(this, argu);
+        String emitStr = "\tcall void (i32) @print_int(i32 " + exp + ")\n\n";
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling print statement");
+        }
+        n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        return _ret;
+    }
+
+    /**
     * f0 -> Clause()
     * f1 -> "&&"
     * f2 -> Clause()
@@ -428,19 +623,6 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     }
 
     /**
-    * f0 -> "!"
-    * f1 -> Clause()
-    */
-    public String visit(NotExpression n, String argu) throws Exception {
-        n.f0.accept(this, argu);
-        String clause;
-        clause = n.f1.accept(this, argu);
-        String regXor = generateRegister();
-        String emitString = "\t" + regXor + " = xor i1 1, " + clause + "\n";
-        emit(emitString);
-        return regXor;
-    }
-    /**
     * f0 -> PrimaryExpression()
     * f1 -> "<"
     * f2 -> PrimaryExpression()
@@ -454,6 +636,213 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String emitStr = "\t" + regCmp + " = icmp slt i32 " + priExp1 + ", " + priExp2 + "\n";
         emit(emitStr);
         return regCmp;
+    }
+
+
+    /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "+"
+    * f2 -> PrimaryExpression()
+    */
+    public String visit(PlusExpression n, String argu) throws Exception {
+        String priExp1 ,priExp2;
+        priExp1 = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        priExp2 = n.f2.accept(this, argu);
+        String regAdd = generateRegister();
+        String emitStr = "\t" + regAdd + " = add i32 " + priExp1 + ", " + priExp2 + "\n\n";
+        emit(emitStr);
+        return regAdd;
+    }
+
+    /**
+     * f0 -> PrimaryExpression()
+    * f1 -> "-"
+    * f2 -> PrimaryExpression()
+    */
+    public String visit(MinusExpression n, String argu) throws Exception {
+        String priExp1 ,priExp2;
+        priExp1 = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        priExp2 = n.f2.accept(this, argu);
+        String regMinus = generateRegister();
+        String emitStr = "\t" + regMinus + " = sub i32 " + priExp1 + ", " + priExp2 + "\n\n";
+        emit(emitStr);
+        return regMinus;
+    }
+
+    /**
+     * f0 -> PrimaryExpression()
+    * f1 -> "*"
+    * f2 -> PrimaryExpression()
+    */
+    public String visit(TimesExpression n, String argu) throws Exception {
+        String priExp1 ,priExp2;
+        priExp1 = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        priExp2 = n.f2.accept(this, argu);
+        String regMul = generateRegister();
+        String emitStr = "\t" + regMul + " = mul i32 " + priExp1 + ", " + priExp2 + "\n\n";
+        emit(emitStr);
+        return regMul;
+    }
+
+
+    /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "["
+    * f2 -> PrimaryExpression()
+    * f3 -> "]"
+    */
+    public String visit(ArrayLookup n, String argu) throws Exception {
+        
+        String priExp1;
+        priExp1 = n.f0.accept(this, argu);
+        
+        String type = this.registerTypes.get(priExp1);
+        if (type == "int[]") {
+            type = "i32";
+
+            String regSizeArray = generateRegister();
+            String emitString;
+            emitString = "\t" + regSizeArray + " = load i32, " + type + "* " + priExp1 + "\n";
+            emit(emitString);
+            
+            n.f1.accept(this, argu);
+            String priExp2;
+            priExp2 = n.f2.accept(this, argu);
+            n.f3.accept(this, argu);
+
+            String regCheckGEZero = generateRegister();
+            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + priExp2 + ", 0\n";
+            emit(emitString);
+
+            String regCheckLTSize = generateRegister();
+            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + priExp2 + ", " + regSizeArray + "\n";
+            emit(emitString);
+
+            
+            String regAnd = generateRegister();
+            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
+            emit(emitString);
+
+            String[] labels = generateLabel("oob");
+            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+            emit(emitString);
+
+            emit(labels[0] + ":\n" +
+                "\tcall void @throw_oob()\n" +
+                "\tbr label %" + labels[1] + "\n\n" +
+                labels[1] + ":\n");
+            
+            String regIndex = generateRegister();
+            emitString = "\t" + regIndex + " = add i32 1, " + priExp2 + "\n";
+            emit(emitString);
+
+            String regGetElem = generateRegister();
+            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + priExp1 + ", i32 " + regIndex + "\n";
+            emit(emitString); 
+
+            String regLoad = generateRegister();
+            emitString = "\t" + regLoad + " = load " + type + ", " + type + "* " + regGetElem + "\n\n";
+            emit(emitString);
+            return regLoad;
+
+        }else {
+            type = "i8";
+
+            //bitcast to get the size
+            String regBitcast = generateRegister();
+            String emitString;
+            emitString = "\t" + regBitcast + " = bitcast i8* " + priExp1 + " to i32*\n";
+            emit(emitString);
+
+            String regSizeArray = generateRegister();
+            emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
+            emit(emitString);
+            
+            n.f1.accept(this, argu);
+            String priExp2;
+            priExp2 = n.f2.accept(this, argu);
+            n.f3.accept(this, argu);
+
+            String regCheckGEZero = generateRegister();
+            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + priExp2 + ", 0\n";
+            emit(emitString);
+
+            String regCheckLTSize = generateRegister();
+            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + priExp2 + ", " + regSizeArray + "\n";
+            emit(emitString);
+
+            
+            String regAnd = generateRegister();
+            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
+            emit(emitString);
+
+            String[] labels = generateLabel("oob");
+            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+            emit(emitString);
+
+            emit(labels[0] + ":\n" +
+                "\tcall void @throw_oob()\n" +
+                "\tbr label %" + labels[1] + "\n\n" +
+                labels[1] + ":\n");
+            
+            String regIndex = generateRegister();
+            emitString = "\t" + regIndex + " = add i32 4, " + priExp2 + "\n";
+            emit(emitString);
+
+            String regGetElem = generateRegister();
+            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + priExp1 + ", i32 " + regIndex + "\n";
+            emit(emitString); 
+
+            String regLoad = generateRegister();
+            emitString = "\t" + regLoad + " = load " + type + ", " + type + "* " + regGetElem + "\n\n";
+            emit(emitString);
+
+            String regTrunc = generateRegister();
+            emitString = "\t" + regTrunc + " = trunc i8 " + regLoad + " to i1\n\n";
+            emit(emitString);
+            return regTrunc;
+        }
+        
+
+        
+    }
+
+
+    /**
+    * f0 -> PrimaryExpression()
+    * f1 -> "."
+    * f2 -> "length"
+    */
+    public String visit(ArrayLength n, String argu) throws Exception {
+        String priExp;
+
+        priExp = n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+
+        String type = this.registerTypes.get(priExp);
+        if (type == "int[]") {
+
+            String regSizeArray = generateRegister();
+            String emitString;
+            emitString = "\t" + regSizeArray + " = load i32, i32* " + priExp + "\n";
+            emit(emitString);
+            return regSizeArray;
+        }else {
+            
+            String regBitcast = generateRegister();
+            String emitString;
+            emitString = "\t" + regBitcast + " = bitcast i8* " + priExp + " to i32*\n";
+            emit(emitString);
+
+            String regSizeArray = generateRegister();
+            emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
+            emit(emitString);
+            return regSizeArray;
+        }
     }
 
     /**
@@ -608,377 +997,6 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         this.methodParams.set(lastIndex, this.methodParams.get(lastIndex) + "," + expType);
         return null;
     }
-    /**
-    * f0 -> "System.out.println"
-    * f1 -> "("
-    * f2 -> Expression()
-    * f3 -> ")"
-    * f4 -> ";"
-    */
-    public String visit(PrintStatement n, String argu) throws Exception {
-        String _ret=null;
-        n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        String exp;
-        exp = n.f2.accept(this, argu);
-        String emitStr = "\tcall void (i32) @print_int(i32 " + exp + ")\n\n";
-        if (!emit(emitStr)) {
-            throw new Exception("Something went wrong while compiling print statement");
-        }
-        n.f3.accept(this, argu);
-        n.f4.accept(this, argu);
-        return _ret;
-    }
-
-    /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "+"
-    * f2 -> PrimaryExpression()
-    */
-    public String visit(PlusExpression n, String argu) throws Exception {
-        String priExp1 ,priExp2;
-        priExp1 = n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        priExp2 = n.f2.accept(this, argu);
-        String regAdd = generateRegister();
-        String emitStr = "\t" + regAdd + " = add i32 " + priExp1 + ", " + priExp2 + "\n\n";
-        emit(emitStr);
-        return regAdd;
-    }
-
-    /**
-     * f0 -> PrimaryExpression()
-    * f1 -> "-"
-    * f2 -> PrimaryExpression()
-    */
-    public String visit(MinusExpression n, String argu) throws Exception {
-        String priExp1 ,priExp2;
-        priExp1 = n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        priExp2 = n.f2.accept(this, argu);
-        String regMinus = generateRegister();
-        String emitStr = "\t" + regMinus + " = sub i32 " + priExp1 + ", " + priExp2 + "\n\n";
-        emit(emitStr);
-        return regMinus;
-    }
-
-    /**
-     * f0 -> PrimaryExpression()
-    * f1 -> "*"
-    * f2 -> PrimaryExpression()
-    */
-    public String visit(TimesExpression n, String argu) throws Exception {
-        String priExp1 ,priExp2;
-        priExp1 = n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        priExp2 = n.f2.accept(this, argu);
-        String regMul = generateRegister();
-        String emitStr = "\t" + regMul + " = mul i32 " + priExp1 + ", " + priExp2 + "\n\n";
-        emit(emitStr);
-        return regMul;
-    }
-
-    /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "["
-    * f2 -> PrimaryExpression()
-    * f3 -> "]"
-    */
-    public String visit(ArrayLookup n, String argu) throws Exception {
-        
-        String priExp1;
-        priExp1 = n.f0.accept(this, argu);
-        
-        String type = this.registerTypes.get(priExp1);
-        if (type == "int[]") {
-            type = "i32";
-
-            String regSizeArray = generateRegister();
-            String emitString;
-            emitString = "\t" + regSizeArray + " = load i32, " + type + "* " + priExp1 + "\n";
-            emit(emitString);
-            
-            n.f1.accept(this, argu);
-            String priExp2;
-            priExp2 = n.f2.accept(this, argu);
-            n.f3.accept(this, argu);
-
-            String regCheckGEZero = generateRegister();
-            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + priExp2 + ", 0\n";
-            emit(emitString);
-
-            String regCheckLTSize = generateRegister();
-            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + priExp2 + ", " + regSizeArray + "\n";
-            emit(emitString);
-
-            
-            String regAnd = generateRegister();
-            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-            emit(emitString);
-
-            String[] labels = generateLabel("oob");
-            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-            emit(emitString);
-
-            emit(labels[0] + ":\n" +
-                "\tcall void @throw_oob()\n" +
-                "\tbr label %" + labels[1] + "\n\n" +
-                labels[1] + ":\n");
-            
-            String regIndex = generateRegister();
-            emitString = "\t" + regIndex + " = add i32 1, " + priExp2 + "\n";
-            emit(emitString);
-
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + priExp1 + ", i32 " + regIndex + "\n";
-            emit(emitString); 
-
-            String regLoad = generateRegister();
-            emitString = "\t" + regLoad + " = load " + type + ", " + type + "* " + regGetElem + "\n\n";
-            emit(emitString);
-            return regLoad;
-
-        }else {
-            type = "i8";
-
-            //bitcast to get the size
-            String regBitcast = generateRegister();
-            String emitString;
-            emitString = "\t" + regBitcast + " = bitcast i8* " + priExp1 + " to i32*\n";
-            emit(emitString);
-
-            String regSizeArray = generateRegister();
-            emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
-            emit(emitString);
-            
-            n.f1.accept(this, argu);
-            String priExp2;
-            priExp2 = n.f2.accept(this, argu);
-            n.f3.accept(this, argu);
-
-            String regCheckGEZero = generateRegister();
-            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + priExp2 + ", 0\n";
-            emit(emitString);
-
-            String regCheckLTSize = generateRegister();
-            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + priExp2 + ", " + regSizeArray + "\n";
-            emit(emitString);
-
-            
-            String regAnd = generateRegister();
-            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-            emit(emitString);
-
-            String[] labels = generateLabel("oob");
-            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-            emit(emitString);
-
-            emit(labels[0] + ":\n" +
-                "\tcall void @throw_oob()\n" +
-                "\tbr label %" + labels[1] + "\n\n" +
-                labels[1] + ":\n");
-            
-            String regIndex = generateRegister();
-            emitString = "\t" + regIndex + " = add i32 4, " + priExp2 + "\n";
-            emit(emitString);
-
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + priExp1 + ", i32 " + regIndex + "\n";
-            emit(emitString); 
-
-            String regLoad = generateRegister();
-            emitString = "\t" + regLoad + " = load " + type + ", " + type + "* " + regGetElem + "\n\n";
-            emit(emitString);
-
-            String regTrunc = generateRegister();
-            emitString = "\t" + regTrunc + " = trunc i8 " + regLoad + " to i1\n\n";
-            emit(emitString);
-            return regTrunc;
-        }
-        
-
-        
-    }
-
-    /**
-    * f0 -> PrimaryExpression()
-    * f1 -> "."
-    * f2 -> "length"
-    */
-    public String visit(ArrayLength n, String argu) throws Exception {
-        String priExp;
-
-        priExp = n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        n.f2.accept(this, argu);
-
-        String type = this.registerTypes.get(priExp);
-        if (type == "int[]") {
-
-            String regSizeArray = generateRegister();
-            String emitString;
-            emitString = "\t" + regSizeArray + " = load i32, i32* " + priExp + "\n";
-            emit(emitString);
-            return regSizeArray;
-        }else {
-            
-            String regBitcast = generateRegister();
-            String emitString;
-            emitString = "\t" + regBitcast + " = bitcast i8* " + priExp + " to i32*\n";
-            emit(emitString);
-
-            String regSizeArray = generateRegister();
-            emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
-            emit(emitString);
-            return regSizeArray;
-        }
-    }
-
-    /**
-    * f0 -> Identifier()
-    * f1 -> "["
-    * f2 -> Expression()
-    * f3 -> "]"
-    * f4 -> "="
-    * f5 -> Expression()
-    * f6 -> ";"
-    */
-    public String visit(ArrayAssignmentStatement n, String argu) throws Exception {
-        String id;
-        id = n.f0.accept(this, argu);
-        String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
-        if (ret == null) {
-            throw new Exception("Name " + id + " is not declared.");
-        }
-        String type = ret[0];
-        if (type == "int[]") {
-            type = "i32";
-        }else {                 //NEEDS EXTRA CODE FOR BOOLEAN ARRAYS
-            type = "i8";
-        }
-        String scope = ret[1];
-        String regLoad;
-        String emitString;
-        if ( scope == "class") {
-            Integer offset = vTables.findOffset(this.currentClass, id);
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
-            emit(emitString);
-
-            String regBitcast = generateRegister();
-        
-            emitString = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to " + type + "**\n\n";
-            emit(emitString);
-            regLoad = generateRegister();
-            emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + regBitcast + "\n";
-            emit(emitString);
-        }else {
-
-            regLoad = generateRegister();
-            emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + "%" + id + "\n";
-            emit(emitString);
-        }
-
-        String expIndex, exp;
-
-        n.f1.accept(this, argu);
-        expIndex = n.f2.accept(this, argu);
-        n.f3.accept(this, argu);
-        n.f4.accept(this, argu);
-        exp = n.f5.accept(this, argu);
-        n.f6.accept(this, argu);
-
-        if (type == "i32") {
-
-            String regSizeArray = generateRegister();
-            emitString = "\t" + regSizeArray + " = load i32, " + type + "* " + regLoad + "\n";
-            emit(emitString);
-
-            String regCheckGEZero = generateRegister();
-            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
-            emit(emitString);
-
-            String regCheckLTSize = generateRegister();
-            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
-            emit(emitString);
-
-            
-            String regAnd = generateRegister();
-            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-            emit(emitString);
-
-            String[] labels = generateLabel("oob");
-            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-            emit(emitString);
-
-            emit(labels[0] + ":\n" +
-                "\tcall void @throw_oob()\n" +
-                "\tbr label %" + labels[1] + "\n\n" +
-                labels[1] + ":\n");
-            
-            String regIndex = generateRegister();
-            emitString = "\t" + regIndex + " = add i32 1, " + expIndex + "\n";
-            emit(emitString);
-
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
-            emit(emitString); 
-
-            emitString = "\tstore " + type + " " + exp + ", " + type + "* " + regGetElem + "\n\n";
-            emit(emitString);
-
-        }else {
-
-            String regBitcast = generateRegister();
-            emitString = "\t" + regBitcast + " = bitcast i8* " + regLoad + " to i32*\n";
-            emit(emitString);
-
-            String regSizeArray = generateRegister();
-            emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
-            emit(emitString);
-
-            String regCheckGEZero = generateRegister();
-            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
-            emit(emitString);
-
-            String regCheckLTSize = generateRegister();
-            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
-            emit(emitString);
-
-            
-            String regAnd = generateRegister();
-            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-            emit(emitString);
-
-            String[] labels = generateLabel("oob");
-            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-            emit(emitString);
-
-            emit(labels[0] + ":\n" +
-                "\tcall void @throw_oob()\n" +
-                "\tbr label %" + labels[1] + "\n\n" +
-                labels[1] + ":\n");
-            
-            String regIndex = generateRegister();
-            emitString = "\t" + regIndex + " = add i32 4, " + expIndex + "\n";
-            emit(emitString);
-
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
-            emit(emitString); 
-
-            String regZext = generateRegister();
-            emitString = "\t" + regZext + " = zext i1 " + exp + " to i8\n";
-            emit(emitString);
-
-            emitString = "\tstore " + type + " " + regZext + ", " + type + "* " + regGetElem + "\n\n";
-            emit(emitString);
-
-        }
-        
-
-        return null;
-    }
 
 
     /**
@@ -998,152 +1016,26 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return primExp;
     }
 
+
     /**
-    * f0 -> "new"
-    * f1 -> "boolean"
-    * f2 -> "["
-    * f3 -> Expression()
-    * f4 -> "]"
+    * f0 -> <INTEGER_LITERAL>
     */
-    public String visit(BooleanArrayAllocationExpression n, String argu) throws Exception {
-        n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        n.f2.accept(this, argu);
-        String size;
-        size =  n.f3.accept(this, argu);
-        n.f4.accept(this, argu);
-        //size plus 4 bytes to store the size of the array
-        String emitString;
-        String regAdd = generateRegister();
-        emitString = "\t" + regAdd + " = add i32 4, " + size + "\n";
-        emit(emitString);
-        String regCmp = generateRegister();
-        emitString = "\t" + regCmp + " = icmp sge i32 " + regAdd + ", 4\n";
-        emit(emitString);
-
-        String[] labels = generateLabel("nsz");
-        emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-        emit(emitString);
-
-        emit(labels[0] + ":\n" +
-            "\tcall void @throw_nsz()\n" +
-            "\tbr label %" + labels[1] + "\n\n");
-        emit(labels[1] + ":\n");
-
-        String regCalloc = generateRegister();
-        emitString = "\t" + regCalloc + " = call i8* @calloc(i32 " + regAdd + ", i32 1)\n";
-        emit(emitString);
-        
-        //bitcast to i32* to store the size in first 4 bytes
-        String regBitcast1 = generateRegister();
-        emitString = "\t" + regBitcast1 + " = bitcast i8* " + regCalloc + " to i32*\n";
-        emit(emitString);
-
-        emitString = "\tstore i32 " + size + ", i32* " + regBitcast1 + "\n";
-        emit(emitString);
-        //bitcast to i8* and return pointer
-        String regBitcast2 = generateRegister();
-        emitString = "\t" + regBitcast2 + " = bitcast i32* " + regBitcast1 + " to i8*\n\n";     //may not needed and return just regCalloc
-        emit(emitString);
-        return regBitcast2;
+    public String visit(IntegerLiteral n, String argu) throws Exception {
+        return n.f0.accept(this, argu);
     }
 
     /**
-     * f0 -> "new"
-    * f1 -> "int"
-    * f2 -> "["
-    * f3 -> Expression()
-    * f4 -> "]"
+    * f0 -> "true"
     */
-    public String visit(IntegerArrayAllocationExpression n, String argu) throws Exception {
-        n.f0.accept(this, argu);
-        n.f1.accept(this, argu);
-        n.f2.accept(this, argu);
-        String exp;
-        String regAdd = generateRegister();
-        
-        exp = n.f3.accept(this, argu);
-        n.f4.accept(this, argu);
-        String emitString = "\t" + regAdd + " = add i32 1, " + exp + "\n";
-        emit(emitString);
-
-        String regCmp = generateRegister();
-        emitString = "\t" + regCmp + " = icmp sge i32 " + regAdd + ", 1\n";
-        emit(emitString);
-        String[] labels = generateLabel("nsz");
-        emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-        emit(emitString);
-        
-        emit(labels[0] + ":\n" +
-            "\tcall void @throw_nsz()\n" +
-                "\tbr label %" + labels[1] + "\n\n");
-        emit(labels[1] + ":\n");
-        String regAlloc = generateRegister();
-        emitString = "\t" + regAlloc + " = call i8* @calloc(i32 " + regAdd + ", i32 4)\n";
-        emit(emitString);
-        String regBitcast = generateRegister();
-        emitString = "\t" + regBitcast + " = bitcast i8* " + regAlloc + " to i32*\n";
-        emit(emitString);
-        emitString = "\tstore i32 " + exp + ", i32* " + regBitcast + "\n\n";
-        emit(emitString); 
-        return regBitcast;
+    public String visit(TrueLiteral n, String argu) throws Exception {
+        return "1";
     }
 
     /**
-    * f0 -> "new"
-    * f1 -> Identifier()
-    * f2 -> "("
-    * f3 -> ")"
+     * f0 -> "false"
     */
-    public String visit(AllocationExpression n, String argu) throws Exception {
-
-
-        n.f0.accept(this, argu);
-        this.primaryExp = false;
-        String className;
-        className = n.f1.accept(this, argu);
-        this.messageSendClass = className;
-        String regCalloc = generateRegister();
-
-        Integer objSize = vTables.getSizeOfObj(className, sTable);
-        String emitString = "\t" + regCalloc + " = call i8* @calloc(i32 1, i32 " + objSize + ")\n\n";
-        if (!emit(emitString)) {
-            throw new Exception("Something went wrong with allocation expression.");
-        }
-        String regBitcast = generateRegister();
-        emitString = "\t" + regBitcast + " = bitcast i8* " + regCalloc + " to i8***\n\n";
-        if (!emit(emitString)) {
-            throw new Exception("Something went wrong with allocation expression.");
-        }
-        String regGetEl = generateRegister();
-        VTableInfo vInfo = vTables.VTablesHMap.get(className);
-        Integer numMethods = vInfo.methodsVTable.size();
-        emitString = "\t" + regGetEl + " = getelementptr [" + numMethods.toString() + " x i8*], [" +
-                        numMethods.toString() + " x i8*]* @." + className + "_vtable, i32 0, i32 0\n\n";
-        if (!emit(emitString)) {
-            throw new Exception("Something went wrong with allocation expression.");
-        }
-        emitString = "\tstore i8** " + regGetEl + ", i8*** " + regBitcast + "\n\n";
-        if (!emit(emitString)) {
-            throw new Exception("Something went wrong with allocation expression.");
-        }
-        n.f2.accept(this, argu);
-        n.f3.accept(this, argu);
-        return regCalloc;
-    }
-
-
-    /**
-    * f0 -> "("
-    * f1 -> Expression()
-    * f2 -> ")"
-    */
-    public String visit(BracketExpression n, String argu) throws Exception {
-        String exp;
-        n.f0.accept(this, argu);
-        exp = n.f1.accept(this, argu);
-        n.f2.accept(this, argu);
-        return exp;
+    public String visit(FalseLiteral n, String argu) throws Exception {
+        return "0";
     }
 
     /**
@@ -1292,7 +1184,8 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return id;
     }
 
-     /**
+
+    /**
     * f0 -> "this"
     */
     public String visit(ThisExpression n, String argu) throws Exception {
@@ -1300,48 +1193,169 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         return "%this";
     }
 
+
     /**
-    * f0 -> "true"
+    * f0 -> "new"
+    * f1 -> "boolean"
+    * f2 -> "["
+    * f3 -> Expression()
+    * f4 -> "]"
     */
-    public String visit(TrueLiteral n, String argu) throws Exception {
-        return "1";
+    public String visit(BooleanArrayAllocationExpression n, String argu) throws Exception {
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        String size;
+        size =  n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        //size plus 4 bytes to store the size of the array
+        String emitString;
+        String regAdd = generateRegister();
+        emitString = "\t" + regAdd + " = add i32 4, " + size + "\n";
+        emit(emitString);
+        String regCmp = generateRegister();
+        emitString = "\t" + regCmp + " = icmp sge i32 " + regAdd + ", 4\n";
+        emit(emitString);
+
+        String[] labels = generateLabel("nsz");
+        emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+        emit(emitString);
+
+        emit(labels[0] + ":\n" +
+            "\tcall void @throw_nsz()\n" +
+            "\tbr label %" + labels[1] + "\n\n");
+        emit(labels[1] + ":\n");
+
+        String regCalloc = generateRegister();
+        emitString = "\t" + regCalloc + " = call i8* @calloc(i32 " + regAdd + ", i32 1)\n";
+        emit(emitString);
+        
+        //bitcast to i32* to store the size in first 4 bytes
+        String regBitcast1 = generateRegister();
+        emitString = "\t" + regBitcast1 + " = bitcast i8* " + regCalloc + " to i32*\n";
+        emit(emitString);
+
+        emitString = "\tstore i32 " + size + ", i32* " + regBitcast1 + "\n";
+        emit(emitString);
+        //bitcast to i8* and return pointer
+        String regBitcast2 = generateRegister();
+        emitString = "\t" + regBitcast2 + " = bitcast i32* " + regBitcast1 + " to i8*\n\n";     //may not needed and return just regCalloc
+        emit(emitString);
+        return regBitcast2;
     }
 
     /**
-     * f0 -> "false"
+     * f0 -> "new"
+    * f1 -> "int"
+    * f2 -> "["
+    * f3 -> Expression()
+    * f4 -> "]"
     */
-    public String visit(FalseLiteral n, String argu) throws Exception {
-        return "0";
+    public String visit(IntegerArrayAllocationExpression n, String argu) throws Exception {
+        n.f0.accept(this, argu);
+        n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        String exp;
+        String regAdd = generateRegister();
+        
+        exp = n.f3.accept(this, argu);
+        n.f4.accept(this, argu);
+        String emitString = "\t" + regAdd + " = add i32 1, " + exp + "\n";
+        emit(emitString);
+
+        String regCmp = generateRegister();
+        emitString = "\t" + regCmp + " = icmp sge i32 " + regAdd + ", 1\n";
+        emit(emitString);
+        String[] labels = generateLabel("nsz");
+        emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+        emit(emitString);
+        
+        emit(labels[0] + ":\n" +
+            "\tcall void @throw_nsz()\n" +
+                "\tbr label %" + labels[1] + "\n\n");
+        emit(labels[1] + ":\n");
+        String regAlloc = generateRegister();
+        emitString = "\t" + regAlloc + " = call i8* @calloc(i32 " + regAdd + ", i32 4)\n";
+        emit(emitString);
+        String regBitcast = generateRegister();
+        emitString = "\t" + regBitcast + " = bitcast i8* " + regAlloc + " to i32*\n";
+        emit(emitString);
+        emitString = "\tstore i32 " + exp + ", i32* " + regBitcast + "\n\n";
+        emit(emitString); 
+        return regBitcast;
     }
 
     /**
-    * f0 -> <INTEGER_LITERAL>
+    * f0 -> "new"
+    * f1 -> Identifier()
+    * f2 -> "("
+    * f3 -> ")"
     */
-    public String visit(IntegerLiteral n, String argu) throws Exception {
-        return n.f0.accept(this, argu);
-    }
+    public String visit(AllocationExpression n, String argu) throws Exception {
 
-    public String visit(NodeToken n, String argu) {   
-        return n.toString(); 
+
+        n.f0.accept(this, argu);
+        this.primaryExp = false;
+        String className;
+        className = n.f1.accept(this, argu);
+        this.messageSendClass = className;
+        String regCalloc = generateRegister();
+
+        Integer objSize = vTables.getSizeOfObj(className, sTable);
+        String emitString = "\t" + regCalloc + " = call i8* @calloc(i32 1, i32 " + objSize + ")\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with allocation expression.");
+        }
+        String regBitcast = generateRegister();
+        emitString = "\t" + regBitcast + " = bitcast i8* " + regCalloc + " to i8***\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with allocation expression.");
+        }
+        String regGetEl = generateRegister();
+        VTableInfo vInfo = vTables.VTablesHMap.get(className);
+        Integer numMethods = vInfo.methodsVTable.size();
+        emitString = "\t" + regGetEl + " = getelementptr [" + numMethods.toString() + " x i8*], [" +
+                        numMethods.toString() + " x i8*]* @." + className + "_vtable, i32 0, i32 0\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with allocation expression.");
+        }
+        emitString = "\tstore i8** " + regGetEl + ", i8*** " + regBitcast + "\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with allocation expression.");
+        }
+        n.f2.accept(this, argu);
+        n.f3.accept(this, argu);
+        return regCalloc;
     }
 
     /**
-    * f0 -> "boolean"
-    * f1 -> "["
-    * f2 -> "]"
+    * f0 -> "!"
+    * f1 -> Clause()
     */
-    public String visit(BooleanArrayType n, String argu) {
-        return "boolean[]";
-    } 
-
-    /**
-     * f0 -> "int"
-    * f1 -> "["
-    * f2 -> "]"
-    */
-    public String visit(IntegerArrayType n, String argu) throws Exception{
-        return "int[]";
+    public String visit(NotExpression n, String argu) throws Exception {
+        n.f0.accept(this, argu);
+        String clause;
+        clause = n.f1.accept(this, argu);
+        String regXor = generateRegister();
+        String emitString = "\t" + regXor + " = xor i1 1, " + clause + "\n";
+        emit(emitString);
+        return regXor;
     }
+    
+    /**
+    * f0 -> "("
+    * f1 -> Expression()
+    * f2 -> ")"
+    */
+    public String visit(BracketExpression n, String argu) throws Exception {
+        String exp;
+        n.f0.accept(this, argu);
+        exp = n.f1.accept(this, argu);
+        n.f2.accept(this, argu);
+        return exp;
+    }
+
+    //Helper functions, emit, generate_register, generate_label
 
 
     public boolean emit(String str){
