@@ -27,6 +27,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String messageSendClass;
     ArrayList<String> methodParams = new ArrayList<String>();
     LinkedHashMap<String, String> registerTypes = new LinkedHashMap<String, String>();
+    public String curLabel;
 
     public LLVMIRVisitor(SymbolTable stable, VTable vtables, File file) {
         this.sTable = stable;
@@ -36,6 +37,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         this.label = 0;
         this.primaryExp = false;
         this.messageSendClass = "";
+        this.curLabel = "";
     }
 
 
@@ -602,21 +604,22 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String[] labels = generateLabel("and");
         emit("\tbr label %" + labels[0] + "\n\n" +
             labels[0] + ":\n");
+        this.curLabel = labels[0];
+
         String emitString = "\tbr i1 " + clause1 + ", label %" + labels[1] + ", label %" + labels[2] + "\n\n";
         emit(emitString);
         
         emit(labels[1]  + ":\n");
-
+        this.curLabel = labels[1];
         n.f1.accept(this, argu);
         clause2 = n.f2.accept(this, argu);
 
         emit("\tbr label %" + labels[2] + "\n\n" +
-            labels[2]  + ":\n" +
-            "\tbr label %" + labels[3] + "\n\n" + 
-            labels[3] + ":\n");
+            labels[2]  + ":\n");
         
         String regPhi = generateRegister();
-        emitString = "\t" + regPhi + " = phi i1  [ 0, %" + labels[0] + " ], [ " + clause2 + ", %" + labels[2] + " ]\n\n";  
+        emitString = "\t" + regPhi + " = phi i1  [ 0, %" + labels[0] + " ], [ " + clause2 + ", %" + this.curLabel + " ]\n\n";  
+        this.curLabel = labels[2];
         emit(emitString);
 
         return regPhi;
@@ -1398,13 +1401,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             labels[1] = "oob_ok_"  + this.label.toString();
         }else if ( exp == "and") {
             labels = new String[4];
-            labels[0] = "and_clause_" + this.label.toString();
-            this.label += 1;
+            labels[0] = "and_start_" + this.label.toString();
             labels[1] = "and_clause_" + this.label.toString();
-            this.label += 1;
-            labels[2] = "and_clause_" + this.label.toString();
-            this.label += 1;
-            labels[3] = "and_clause_" + this.label.toString();
+            labels[2] = "and_end_" + this.label.toString();
         } else if ( exp == "while") {
             labels = new String[3];
             labels[0] = "loop" + this.label.toString();
