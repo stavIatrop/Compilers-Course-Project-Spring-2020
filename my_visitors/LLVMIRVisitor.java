@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 import types.*;
 import visitor.GJDepthFirst;
@@ -18,11 +17,11 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public VTable vTables;
     String fileName;
     File LLVMfile;
-    public String currentClass;
-    public String currentMethod;
-    public boolean classVar;
-    public Integer register;
-    public Integer label;
+    public String currentClass;         //keep track of the class that is being "investigated"
+    public String currentMethod;        //keep track of the function that is being "investigated"
+    public boolean classVar;            //keep track of the scope of the variable (class field or function variable)
+    public Integer register;            //keep track of the registers enumeration
+    public Integer label;               //keep track of the labels enumeration
     public boolean primaryExp;
     public String messageSendClass;
     ArrayList<String> methodParams = new ArrayList<String>();
@@ -267,11 +266,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         n.f9.accept(this, argu);
         String expType;
         expType = n.f10.accept(this, argu);
-        // if (expType == "true") {
-        //     expType = "1";
-        // }else if (expType == "false") {
-        //     expType = "0";
-        // }
+        
         emitStr = "\tret " + retType + " " + expType + "\n";
         emit(emitStr);
 
@@ -352,11 +347,6 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             var = "%" + id;
         }
 
-        // if (exp == "true") {
-        //     exp = "1";
-        // }else if (exp == "false"){
-        //     exp = "0";
-        // }
         emitStr = "\tstore " + type + " " + exp + ", " + type + "* " + var + "\n\n";
         if (!emit(emitStr)) {
             throw new Exception("Something went wrong while compiling assignment statement of " + id + " variable");
@@ -970,9 +960,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String expType;
         this.methodParams.add("");
         expType = n.f0.accept(this, argu);
-        // if (expType == "this") {
-        //     expType = this.currentClass;
-        // }
+
         int lastIndex = this.methodParams.size() - 1;
         this.methodParams.set(lastIndex, expType);
         
@@ -994,9 +982,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         int lastIndex = this.methodParams.size() - 1;
         n.f0.accept(this, argu);
         expType = n.f1.accept(this, argu);
-        // if (expType == "this") {
-        //     expType = this.currentClass;
-        // }
+
         this.methodParams.set(lastIndex, this.methodParams.get(lastIndex) + "," + expType);
         return null;
     }
@@ -1323,6 +1309,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             throw new Exception("Something went wrong with allocation expression.");
         }
         emitString = "\tstore i8** " + regGetEl + ", i8*** " + regBitcast + "\n\n";
+
         if (!emit(emitString)) {
             throw new Exception("Something went wrong with allocation expression.");
         }
