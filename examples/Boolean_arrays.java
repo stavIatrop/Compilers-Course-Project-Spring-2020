@@ -10,7 +10,7 @@ class Boolean_arrays {
         k[0] = true;
         k[1] = false;
 
-        if ((k[0]) && (k[1])) {
+        if ((k[0]) && ((new boolean[1])[0])) {
             System.out.println(1);
 
         }else {

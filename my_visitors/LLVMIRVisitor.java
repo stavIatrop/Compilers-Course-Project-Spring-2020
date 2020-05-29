@@ -254,7 +254,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
                 }
 
-                emit(emitStr);
+                if (!emit(emitStr)) {
+                    throw new Exception("Something went wrong while compiling method declaration.");
+                }
 
             }
         }
@@ -267,13 +269,14 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String expType;
         expType = n.f10.accept(this, argu);
         
-        emitStr = "\tret " + retType + " " + expType + "\n";
-        emit(emitStr);
+        emitStr = "\tret " + retType + " " + expType + "\n}\n\n";
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling method declaration.");
+        }
 
         n.f11.accept(this, argu);
         n.f12.accept(this, argu);
-        emitStr = "}\n\n";
-        emit(emitStr);
+
         return _ret;
     }
 
@@ -309,7 +312,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
         id = n.f0.accept(this, argu);
         String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
-        if (ret == null) {
+        if (ret == null) {  //redundant check
             throw new Exception("Name " + id + " is not declared in assignment.");
         }
         String type = ret[0];
@@ -336,11 +339,17 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
             Integer offset = vTables.findOffset(this.currentClass, id);
             String regGetElem = generateRegister();
-            emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
-            emit(emitStr);
-            String regBitcast = generateRegister();
+            emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";       //Get a pointer to the {id} field of this aka &this->{id}
+            if (!emit(emitStr)) {
+                throw new Exception("Something went wrong while compiling assignment statement of " + id + " variable.");
+            }
+
+            String regBitcast = generateRegister();         //perform the necessary bitcasts
             emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to " + type + "*" + "\n\n";
-            emit(emitStr);  
+            if (!emit(emitStr)) {
+                throw new Exception("Something went wrong while compiling assignment statement of " + id + " variable.");
+            }  
+
             var = regBitcast;
             
         }else if (scope == "fun_var" || scope == "arg") {
@@ -368,13 +377,14 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String id;
         id = n.f0.accept(this, argu);
         String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
-        if (ret == null) {
+        if (ret == null) {  //redundant check
             throw new Exception("Name " + id + " is not declared.");
         }
         String type = ret[0];
+
         if (type == "int[]") {
             type = "i32";
-        }else {                 //NEEDS EXTRA CODE FOR BOOLEAN ARRAYS
+        }else {
             type = "i8";
         }
         String scope = ret[1];
@@ -384,20 +394,28 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             Integer offset = vTables.findOffset(this.currentClass, id);
             String regGetElem = generateRegister();
             emitString = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }   
 
             String regBitcast = generateRegister();
         
             emitString = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to " + type + "**\n\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }   
             regLoad = generateRegister();
             emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + regBitcast + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }   
         }else {
 
             regLoad = generateRegister();
             emitString = "\t" + regLoad + " = load " + type + "*, " + type + "** " + "%" + id + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }   
         }
 
         String expIndex, exp;
@@ -409,94 +427,104 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         exp = n.f5.accept(this, argu);
         n.f6.accept(this, argu);
 
+        String regSizeArray = "";
+
         if (type == "i32") {
 
-            String regSizeArray = generateRegister();
+            regSizeArray = generateRegister();
             emitString = "\t" + regSizeArray + " = load i32, " + type + "* " + regLoad + "\n";
-            emit(emitString);
-
-            String regCheckGEZero = generateRegister();
-            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
-            emit(emitString);
-
-            String regCheckLTSize = generateRegister();
-            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
-            emit(emitString);
-
-            
-            String regAnd = generateRegister();
-            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-            emit(emitString);
-
-            String[] labels = generateLabel("oob");
-            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-            emit(emitString);
-
-            emit(labels[0] + ":\n" +
-                "\tcall void @throw_oob()\n" +
-                "\tbr label %" + labels[1] + "\n\n" +
-                labels[1] + ":\n");
-            
-            String regIndex = generateRegister();
-            emitString = "\t" + regIndex + " = add i32 1, " + expIndex + "\n";
-            emit(emitString);
-
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
-            emit(emitString); 
-
-            emitString = "\tstore " + type + " " + exp + ", " + type + "* " + regGetElem + "\n\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
 
         }else {
 
             String regBitcast = generateRegister();
             emitString = "\t" + regBitcast + " = bitcast i8* " + regLoad + " to i32*\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
 
-            String regSizeArray = generateRegister();
+            regSizeArray = generateRegister();
             emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
+        }
 
-            String regCheckGEZero = generateRegister();
-            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
-            emit(emitString);
+        String regCheckGEZero = generateRegister();
+        emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + expIndex + ", 0\n";
+        if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
 
-            String regCheckLTSize = generateRegister();
-            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
-            emit(emitString);
+        String regCheckLTSize = generateRegister();
+        emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + expIndex + ", " + regSizeArray + "\n";
+        if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
 
-            
-            String regAnd = generateRegister();
-            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-            emit(emitString);
+        
+        String regAnd = generateRegister();
+        emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
+        if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
 
-            String[] labels = generateLabel("oob");
-            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-            emit(emitString);
+        String[] labels = generateLabel("oob");
+        emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+        if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
 
-            emit(labels[0] + ":\n" +
-                "\tcall void @throw_oob()\n" +
-                "\tbr label %" + labels[1] + "\n\n" +
-                labels[1] + ":\n");
-            
-            String regIndex = generateRegister();
+        emit(labels[0] + ":\n" +
+            "\tcall void @throw_oob()\n" +
+            "\tbr label %" + labels[1] + "\n\n" +
+            labels[1] + ":\n");
+
+
+        String regIndex = "";
+        if (type == "i32") {
+
+            regIndex = generateRegister();
+            emitString = "\t" + regIndex + " = add i32 1, " + expIndex + "\n";
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
+        }else {
+
+            regIndex = generateRegister();
             emitString = "\t" + regIndex + " = add i32 4, " + expIndex + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
+        }
 
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
-            emit(emitString); 
+        String regGetElem = generateRegister();
+        emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + regLoad + ", i32 " + regIndex + "\n";
+        if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            } 
+
+        if (type == "i32") {
+
+            emitString = "\tstore " + type + " " + exp + ", " + type + "* " + regGetElem + "\n\n";
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
+        }else {
 
             String regZext = generateRegister();
             emitString = "\t" + regZext + " = zext i1 " + exp + " to i8\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
 
             emitString = "\tstore " + type + " " + regZext + ", " + type + "* " + regGetElem + "\n\n";
-            emit(emitString);
-
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array assignment statement of " + id + " variable");
+            }
         }
-        
 
         return null;
     }
@@ -518,17 +546,34 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         exp = n.f2.accept(this, argu);
         String[] labels = generateLabel("if");
         String emitString = "\tbr i1 " + exp + ", label %" + labels[0] +", label %" + labels[1] + "\n\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling array if statement");
+        }
 
-        emit(labels[0] + ":\n");
+        if (!emit(labels[0] + ":\n")) {
+            throw new Exception("Something went wrong while compiling array if statement");
+        }
         n.f3.accept(this, argu);
         n.f4.accept(this, argu);
-        emit("\tbr label " + "%" + labels[2] + "\n\n");
+
+        if (!emit("\tbr label " + "%" + labels[2] + "\n\n")) {
+            throw new Exception("Something went wrong while compiling array if statement");
+        }
+        
         n.f5.accept(this, argu);
-        emit(labels[1] + ":\n");
+        
+        if (!emit(labels[1] + ":\n")) {
+            throw new Exception("Something went wrong while compiling array if statement");
+        }
+
         n.f6.accept(this, argu);
-        emit("\tbr label " + "%" + labels[2] + "\n\n");
-        emit(labels[2] + ":\n");
+        if (!emit("\tbr label " + "%" + labels[2] + "\n\n")) {
+            throw new Exception("Something went wrong while compiling array if statement");
+        }
+
+        if (!emit(labels[2] + ":\n")) {
+            throw new Exception("Something went wrong while compiling array if statement");
+        }
         return _ret;
     }
     
@@ -543,19 +588,32 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
     public String visit(WhileStatement n, String argu) throws Exception {
         String _ret=null;
         String[] labels = generateLabel("while");
-        emit("\tbr label %" + labels[0] + "\n\n");
-        emit(labels[0] + ":\n");
+        if (!emit("\tbr label %" + labels[0] + "\n\n")) {
+            throw new Exception("Something went wrong while compiling array while statement");
+        }
+
+
+        if (!emit(labels[0] + ":\n")) {
+            throw new Exception("Something went wrong while compiling array while statement");
+        }
         n.f0.accept(this, argu);
         n.f1.accept(this, argu);
         String exp;
         exp = n.f2.accept(this, argu);
         String emitString = "\tbr i1 " + exp + ", label %" + labels[1] +  ", label %" + labels[2] + "\n\n";
-        emit(emitString);
-        emit(labels[1] + ":\n");
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling array while statement");
+        }
+
+        if (!emit(labels[1] + ":\n")) {
+            throw new Exception("Something went wrong while compiling array while statement");
+        }
         n.f3.accept(this, argu);
         n.f4.accept(this, argu);
-        emit("\tbr label %" + labels[0] + "\n\n" + 
-            labels[2] + ":\n");
+        if (!emit("\tbr label %" + labels[0] + "\n\n" + 
+            labels[2] + ":\n")) {
+            throw new Exception("Something went wrong while compiling array while statement");
+        }
         return _ret;
     }
 
@@ -592,25 +650,37 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         clause1 = n.f0.accept(this, argu);
         //Check first if clause1 is false
         String[] labels = generateLabel("and");
-        emit("\tbr label %" + labels[0] + "\n\n" +
-            labels[0] + ":\n");
+
+        if (!emit("\tbr label %" + labels[0] + "\n\n" +
+            labels[0] + ":\n")) {
+            throw new Exception("Something went wrong while compiling and expression");
+        }
         this.curLabel = labels[0];
 
         String emitString = "\tbr i1 " + clause1 + ", label %" + labels[1] + ", label %" + labels[2] + "\n\n";
-        emit(emitString);
         
-        emit(labels[1]  + ":\n");
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling and expression");
+        }
+
+        if (!emit(labels[1]  + ":\n")) {
+            throw new Exception("Something went wrong while compiling and expression");
+        }
         this.curLabel = labels[1];
         n.f1.accept(this, argu);
         clause2 = n.f2.accept(this, argu);
 
-        emit("\tbr label %" + labels[2] + "\n\n" +
-            labels[2]  + ":\n");
-        
+
+        if (!emit("\tbr label %" + labels[2] + "\n\n" +
+            labels[2]  + ":\n")) {
+            throw new Exception("Something went wrong while compiling and expression");
+        }
         String regPhi = generateRegister();
         emitString = "\t" + regPhi + " = phi i1  [ 0, %" + labels[0] + " ], [ " + clause2 + ", %" + this.curLabel + " ]\n\n";  
         this.curLabel = labels[2];
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling and expression");
+        }
 
         return regPhi;
     }
@@ -627,7 +697,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         priExp2 = n.f2.accept(this, argu);
         String regCmp = generateRegister();
         String emitStr = "\t" + regCmp + " = icmp slt i32 " + priExp1 + ", " + priExp2 + "\n";
-        emit(emitStr);
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling compare expression");
+        }
         return regCmp;
     }
 
@@ -644,7 +716,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         priExp2 = n.f2.accept(this, argu);
         String regAdd = generateRegister();
         String emitStr = "\t" + regAdd + " = add i32 " + priExp1 + ", " + priExp2 + "\n\n";
-        emit(emitStr);
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling plus expression");
+        }
         return regAdd;
     }
 
@@ -660,7 +734,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         priExp2 = n.f2.accept(this, argu);
         String regMinus = generateRegister();
         String emitStr = "\t" + regMinus + " = sub i32 " + priExp1 + ", " + priExp2 + "\n\n";
-        emit(emitStr);
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling minus expression");
+        }
         return regMinus;
     }
 
@@ -676,7 +752,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         priExp2 = n.f2.accept(this, argu);
         String regMul = generateRegister();
         String emitStr = "\t" + regMul + " = mul i32 " + priExp1 + ", " + priExp2 + "\n\n";
-        emit(emitStr);
+        if (!emit(emitStr)) {
+            throw new Exception("Something went wrong while compiling times expression");
+        }
         return regMul;
     }
 
@@ -693,113 +771,117 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         priExp1 = n.f0.accept(this, argu);
         
         String type = this.registerTypes.get(priExp1);
+        String regSizeArray = "";
+        String emitString = "";
+
         if (type == "int[]") {
             type = "i32";
 
-            String regSizeArray = generateRegister();
-            String emitString;
+            regSizeArray = generateRegister();
+            
             emitString = "\t" + regSizeArray + " = load i32, " + type + "* " + priExp1 + "\n";
-            emit(emitString);
-            
-            n.f1.accept(this, argu);
-            String priExp2;
-            priExp2 = n.f2.accept(this, argu);
-            n.f3.accept(this, argu);
-
-            String regCheckGEZero = generateRegister();
-            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + priExp2 + ", 0\n";
-            emit(emitString);
-
-            String regCheckLTSize = generateRegister();
-            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + priExp2 + ", " + regSizeArray + "\n";
-            emit(emitString);
-
-            
-            String regAnd = generateRegister();
-            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-            emit(emitString);
-
-            String[] labels = generateLabel("oob");
-            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-            emit(emitString);
-
-            emit(labels[0] + ":\n" +
-                "\tcall void @throw_oob()\n" +
-                "\tbr label %" + labels[1] + "\n\n" +
-                labels[1] + ":\n");
-            
-            String regIndex = generateRegister();
-            emitString = "\t" + regIndex + " = add i32 1, " + priExp2 + "\n";
-            emit(emitString);
-
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + priExp1 + ", i32 " + regIndex + "\n";
-            emit(emitString); 
-
-            String regLoad = generateRegister();
-            emitString = "\t" + regLoad + " = load " + type + ", " + type + "* " + regGetElem + "\n\n";
-            emit(emitString);
-            return regLoad;
-
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling arraylookup expression");
+            }
         }else {
             type = "i8";
 
             //bitcast to get the size
             String regBitcast = generateRegister();
-            String emitString;
+            
             emitString = "\t" + regBitcast + " = bitcast i8* " + priExp1 + " to i32*\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling arraylookup expression");
+            }
 
-            String regSizeArray = generateRegister();
+            regSizeArray = generateRegister();
             emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling arraylookup expression");
+            }
+        }
+
+        n.f1.accept(this, argu);
+        String priExp2;
+        priExp2 = n.f2.accept(this, argu);
+        n.f3.accept(this, argu);
+
+        String regCheckGEZero = generateRegister();
+        emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + priExp2 + ", 0\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling arraylookup expression");
+        }
+
+        String regCheckLTSize = generateRegister();
+        emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + priExp2 + ", " + regSizeArray + "\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling arraylookup expression");
+        }
+
+        
+        String regAnd = generateRegister();
+        emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling arraylookup expression");
+        }
+
+        String[] labels = generateLabel("oob");
+        emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling arraylookup expression");
+        }
+
+        
+        if (!emit(labels[0] + ":\n" +
+            "\tcall void @throw_oob()\n" +
+            "\tbr label %" + labels[1] + "\n\n" +
+            labels[1] + ":\n")) {
+            throw new Exception("Something went wrong while compiling arraylookup expression");
+        }
+
+        this.curLabel = labels[1];
+        String regIndex = "";
+        if (type == "i32") {
+
+            regIndex = generateRegister();
+            emitString = "\t" + regIndex + " = add i32 1, " + priExp2 + "\n";
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling arraylookup expression");
+            }
             
-            n.f1.accept(this, argu);
-            String priExp2;
-            priExp2 = n.f2.accept(this, argu);
-            n.f3.accept(this, argu);
+        }else {
 
-            String regCheckGEZero = generateRegister();
-            emitString = "\t" + regCheckGEZero + " = icmp sge i32 " + priExp2 + ", 0\n";
-            emit(emitString);
-
-            String regCheckLTSize = generateRegister();
-            emitString = "\t" + regCheckLTSize + " = icmp slt i32 " + priExp2 + ", " + regSizeArray + "\n";
-            emit(emitString);
-
-            
-            String regAnd = generateRegister();
-            emitString = "\t" + regAnd + " = and i1 " + regCheckGEZero + ", " + regCheckLTSize + "\n";
-            emit(emitString);
-
-            String[] labels = generateLabel("oob");
-            emitString = "\tbr i1 " + regAnd + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-            emit(emitString);
-
-            emit(labels[0] + ":\n" +
-                "\tcall void @throw_oob()\n" +
-                "\tbr label %" + labels[1] + "\n\n" +
-                labels[1] + ":\n");
-            
-            String regIndex = generateRegister();
+            regIndex = generateRegister();
             emitString = "\t" + regIndex + " = add i32 4, " + priExp2 + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling arraylookup expression");
+            }
 
-            String regGetElem = generateRegister();
-            emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + priExp1 + ", i32 " + regIndex + "\n";
-            emit(emitString); 
+        }
 
-            String regLoad = generateRegister();
-            emitString = "\t" + regLoad + " = load " + type + ", " + type + "* " + regGetElem + "\n\n";
-            emit(emitString);
+        String regGetElem = generateRegister();
+        emitString = "\t" + regGetElem + " = getelementptr " + type + ", " + type + "* " + priExp1 + ", i32 " + regIndex + "\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling arraylookup expression");
+        } 
+
+        String regLoad = generateRegister();
+        emitString = "\t" + regLoad + " = load " + type + ", " + type + "* " + regGetElem + "\n\n";
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling arraylookup expression");
+        }
+
+        if (type == "i32") {
+            return regLoad;
+        }else {
 
             String regTrunc = generateRegister();
             emitString = "\t" + regTrunc + " = trunc i8 " + regLoad + " to i1\n\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling arraylookup expression");
+            }
             return regTrunc;
-        }
-        
-
+        }        
         
     }
 
@@ -822,18 +904,24 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             String regSizeArray = generateRegister();
             String emitString;
             emitString = "\t" + regSizeArray + " = load i32, i32* " + priExp + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array length expression");
+            }
             return regSizeArray;
         }else {
             
             String regBitcast = generateRegister();
             String emitString;
             emitString = "\t" + regBitcast + " = bitcast i8* " + priExp + " to i32*\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array length expression");
+            }
 
             String regSizeArray = generateRegister();
             emitString = "\t" + regSizeArray + " = load i32, i32* " + regBitcast + "\n";
-            emit(emitString);
+            if (!emit(emitString)) {
+                throw new Exception("Something went wrong while compiling array length expression");
+            }
             return regSizeArray;
         }
     }
@@ -852,11 +940,16 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String emitString;
         String regBitcast = generateRegister();
         emitString = "\t" + regBitcast + " = bitcast i8* " + regPrimExp + " to i8***\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling message send expression");
+        }
+
         String regLoad = generateRegister();
         emitString = "\t" + regLoad + " = load i8**, i8*** " + regBitcast + "\n";
-        emit(emitString);
-        
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling message send expression");
+        }
+
         n.f1.accept(this, argu);
         String methodName;
         methodName = n.f2.accept(this, argu);
@@ -864,10 +957,15 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
         Integer methodOffset = vTables.findMethodOffset(this.messageSendClass, methodName);
         emitString = "\t" + regGetElem + " = getelementptr i8*, i8** " + regLoad + ", i32 " + methodOffset + "\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling message send expression");
+        }
+
         String regLoad2 = generateRegister();
         emitString = "\t" + regLoad2 + " = load i8*, i8** " + regGetElem + "\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling message send expression");
+        }
         
         String regBitcast2 = generateRegister();
         
@@ -898,7 +996,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             emitString = emitString + ", " + arg;
         }
         emitString = emitString + ")*\n\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling message send expression");
+        }
 
         
         n.f3.accept(this, argu);
@@ -944,9 +1044,12 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
             }
         }
         emitString = emitString + ")\n\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling message send expression");
+        }
         
         n.f5.accept(this, argu);
+        this.registerTypes.put(regCall, fInfo.return_type);
         return regCall;
     }
 
@@ -1035,7 +1138,7 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         if (this.primaryExp) {
 
             String[] ret = sTable.lookupNameScope(this.currentClass, this.currentMethod, id);
-            if (ret == null) {
+            if (ret == null) {          //redundant check
                 throw new Exception("Name " + id + " is not declared.");
             }
 
@@ -1051,72 +1154,116 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
 
                     String regGetElem = generateRegister();
                     emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regBitcast = generateRegister();
                     emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i32*" + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regLoad = generateRegister();
                     
                     emitStr = "\t" + regLoad + " = load i32, i32* " + regBitcast + "\n\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return regLoad;
 
                 }else if (type == "boolean") {
                     
                     String regGetElem = generateRegister();
                     emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regBitcast = generateRegister();
                     emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i1*" + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regLoad = generateRegister();
                     emitStr = "\t" + regLoad + " = load i1, i1* " + regBitcast + "\n\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+                    
                     return regLoad;
 
-                }else if (type == "int[]"){     //int array different load 
+                }else if (type == "int[]"){ 
                     
                     String regGetElem = generateRegister();
                     emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regBitcast = generateRegister();
                     emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i32**" + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regLoad = generateRegister();
                     this.registerTypes.put(regLoad, "int[]");   //keep track of type for the array lookup
 
                     emitStr = "\t" + regLoad + " = load i32*, i32** " + regBitcast + "\n\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return regLoad;
 
-                }else if (type == "boolean[]") {    //boolean array different load, NOT COMPLETED
+                }else if (type == "boolean[]") {    
                     
                     String regGetElem = generateRegister();
                     emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regBitcast = generateRegister();
                     emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i8**" + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regLoad = generateRegister();
                     this.registerTypes.put(regLoad, "boolean[]");   //keep track of type for the array lookup
 
                     emitStr = "\t" + regLoad + " = load i8*, i8** " + regBitcast + "\n\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return regLoad;
                 }else {
                     this.messageSendClass = type;
                     String regGetElem = generateRegister();
                     emitStr = "\t" + regGetElem + " = getelementptr i8, i8* %this, i32 " + offset + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regBitcast = generateRegister();
                     emitStr = "\t" + regBitcast + " = bitcast i8* " + regGetElem + " to i8**" + "\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     String regLoad = generateRegister();
                     emitStr = "\t" + regLoad + " = load i8*, i8** " + regBitcast + "\n\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return regLoad;
                 }
-                //TO BE CONTINUED
 
             }else if (scope == "fun_var" || scope == "arg") {     //load the fun var
                 if( type == "int") {
@@ -1125,7 +1272,10 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                     String var = "%" + id;
                     String reg = generateRegister();
                     String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return reg;
                     
                 }else if (type == "boolean") {
@@ -1133,26 +1283,35 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                     String var = "%" + id;
                     String reg = generateRegister();
                     String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return reg;
 
-                }else if (type == "int[]"){     //int array different load 
+                }else if (type == "int[]"){     
                     type = "i32*";
                     String var = "%" + id;
                     String reg = generateRegister();
                     String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
                     this.registerTypes.put(reg, "int[]");   //keep track of type for the array lookup
 
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return reg;
-                }else if (type == "boolean[]") {    //boolean array different load
+                }else if (type == "boolean[]") {   
                     type = "i8*";
                     String var = "%" + id;
                     String reg = generateRegister();
                     String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
                     this.registerTypes.put(reg, "boolean[]");   //keep track of type for the array lookup
 
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return reg;
 
                 }else {
@@ -1162,7 +1321,10 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
                     String var = "%" + id;
                     String reg = generateRegister();
                     String emitStr = "\t" + reg + " = load " + type + ", " + type + "* " + var + "\n\n";
-                    emit(emitStr);
+                    if (!emit(emitStr)) {
+                        throw new Exception("Something went wrong while compiling identifier loading");
+                    }
+
                     return reg;
                 }
              
@@ -1201,35 +1363,57 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         String emitString;
         String regAdd = generateRegister();
         emitString = "\t" + regAdd + " = add i32 4, " + size + "\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling boolean array allocation");
+        }
+
         String regCmp = generateRegister();
         emitString = "\t" + regCmp + " = icmp sge i32 " + regAdd + ", 4\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling boolean array allocation");
+        }
 
         String[] labels = generateLabel("nsz");
         emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling boolean array allocation");
+        }
 
-        emit(labels[0] + ":\n" +
+
+        if (!emit(labels[0] + ":\n" +
             "\tcall void @throw_nsz()\n" +
-            "\tbr label %" + labels[1] + "\n\n");
-        emit(labels[1] + ":\n");
+            "\tbr label %" + labels[1] + "\n\n" +
+            labels[1] + ":\n")) {
+            throw new Exception("Something went wrong while compiling boolean array allocation");
+        }
+        this.curLabel = labels[1];
 
         String regCalloc = generateRegister();
         emitString = "\t" + regCalloc + " = call i8* @calloc(i32 " + regAdd + ", i32 1)\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling boolean array allocation");
+        }
         
         //bitcast to i32* to store the size in first 4 bytes
         String regBitcast1 = generateRegister();
         emitString = "\t" + regBitcast1 + " = bitcast i8* " + regCalloc + " to i32*\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling boolean array allocation");
+        }
 
         emitString = "\tstore i32 " + size + ", i32* " + regBitcast1 + "\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling boolean array allocation");
+        }
+
         //bitcast to i8* and return pointer
         String regBitcast2 = generateRegister();
-        emitString = "\t" + regBitcast2 + " = bitcast i32* " + regBitcast1 + " to i8*\n\n";     //may not needed and return just regCalloc
-        emit(emitString);
+        emitString = "\t" + regBitcast2 + " = bitcast i32* " + regBitcast1 + " to i8*\n\n";     
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling boolean array allocation");
+        }
+
+        this.registerTypes.put(regBitcast2, "boolean[]");
         return regBitcast2;
     }
 
@@ -1250,27 +1434,48 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         exp = n.f3.accept(this, argu);
         n.f4.accept(this, argu);
         String emitString = "\t" + regAdd + " = add i32 1, " + exp + "\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling integer array allocation");
+        }
 
         String regCmp = generateRegister();
         emitString = "\t" + regCmp + " = icmp sge i32 " + regAdd + ", 1\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling integer array allocation");
+        }
+
         String[] labels = generateLabel("nsz");
         emitString = "\tbr i1 " + regCmp + ", label %" + labels[1] + ", label %" + labels[0] + "\n\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling integer array allocation");
+        }
         
-        emit(labels[0] + ":\n" +
-            "\tcall void @throw_nsz()\n" +
-                "\tbr label %" + labels[1] + "\n\n");
-        emit(labels[1] + ":\n");
+        if (!emit(labels[0] + ":\n" +
+        "\tcall void @throw_nsz()\n" +
+            "\tbr label %" + labels[1] + "\n\n" +
+            labels[1] + ":\n")) {
+            throw new Exception("Something went wrong while compiling integer array allocation");
+        }
+        this.curLabel = labels[1];
+
         String regAlloc = generateRegister();
         emitString = "\t" + regAlloc + " = call i8* @calloc(i32 " + regAdd + ", i32 4)\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling integer array allocation");
+        }
+
         String regBitcast = generateRegister();
         emitString = "\t" + regBitcast + " = bitcast i8* " + regAlloc + " to i32*\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling integer array allocation");
+        }
+
         emitString = "\tstore i32 " + exp + ", i32* " + regBitcast + "\n\n";
-        emit(emitString); 
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong while compiling integer array allocation");
+        }
+
+        this.registerTypes.put(regBitcast, "int[]");
         return regBitcast;
     }
 
@@ -1328,7 +1533,9 @@ public class LLVMIRVisitor extends GJDepthFirst<String, String>{
         clause = n.f1.accept(this, argu);
         String regXor = generateRegister();
         String emitString = "\t" + regXor + " = xor i1 1, " + clause + "\n";
-        emit(emitString);
+        if (!emit(emitString)) {
+            throw new Exception("Something went wrong with not expression.");
+        }
         return regXor;
     }
     
