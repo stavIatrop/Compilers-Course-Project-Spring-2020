@@ -840,7 +840,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<String, SymbolTable> {
     public String visit(NotExpression n, SymbolTable sTable) throws Exception {
 
         n.f0.accept(this, sTable);
-        n.f1.accept(this, sTable);
+        String type = n.f1.accept(this, sTable);
+        if (type != "boolean") {
+            if (type == "this") {
+                type = this.currentClass;
+            }
+            throw new Exception("The operator ! is undefined for the argument type(s) " + type);
+        }
         return "boolean";
     }
 
