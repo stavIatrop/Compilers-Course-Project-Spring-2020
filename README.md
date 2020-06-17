@@ -49,7 +49,7 @@ The parser is based on the following context-free grammar:
     3.			|fun_calls
     4. fun_calls --> call fun_calls
     5.			| ε
-    6. fun_decl --> Identifier '(' id_list ')' '{' body '}'
+    6. fun_decl --> Identifier '(' id_list body '}'
     7. id_list --> Identifier restIds ')' '{'
     8.			|')' '{'
     9. restIds --> , Identifier restIds
