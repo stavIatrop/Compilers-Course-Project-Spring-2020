@@ -1,9 +1,40 @@
+# First hw ignored files
+
+# Default ignored files
+compilers_hw1/.idea/workspace.xml
+
+### IntelliJ IDEA ###
+compilers_hw1/.idea
+compilers_hw1/*.iws
+compilers_hw1/*.iml
+compilers_hw1/*.ipr
+compilers_hw1/out/
+
+compilers_hw1/*.pdf
+
+compilers_hw1//src/part2/Parser.java
+compilers_hw1//src/part2/sym.java
+compilers_hw1//src/part2/Scanner.java
+
+#Second hw ignored files
+
 # Compiled class file
-*.class
+compilers_hw2/*.class
 
 # Package Files #
-*.jar
+compilers_hw2/*.jar
 
-*.mp4
-/LLVM
-/codegen
+compilers_hw2/parse_error
+compilers_hw2/minijava-testsuite-master
+
+#Third hw ignored files
+
+# Compiled class file
+compilers_hw3/*.class
+
+# Package Files #
+compilers_hw3/*.jar
+
+compilers_hw3/*.mp4
+compilers_hw3//LLVM
+compilers_hw3//codegen
