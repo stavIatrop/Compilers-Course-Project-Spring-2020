@@ -1,0 +1,8 @@
+# Compiled class file
+*.class
+
+# Package Files #
+*.jar
+
+/parse_error
+/minijava-testsuite-master
