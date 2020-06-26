@@ -1,0 +1,9 @@
+# Compiled class file
+*.class
+
+# Package Files #
+*.jar
+
+*.mp4
+/LLVM
+/codegen
